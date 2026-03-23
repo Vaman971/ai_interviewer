@@ -44,7 +44,11 @@ Thumbs.db
 # Testing
 .coverage
 htmlcov/
+coverage_report.txt
 .pytest_cache/
+/frontend/coverage
+/frontend/coverage_output.txt
+/frontend/jest_output.txt
 
 # Uploads
 uploads/*
