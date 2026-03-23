@@ -16,7 +16,7 @@ services:
     depends_on:
       - redis
     volumes:
-      - ./ai_interviewer.db:/app/ai_interviewer.db
+      - db_data:/app
       - ./uploads:/app/uploads
 
   # ── Frontend (Next.js) ──────────────────────────────────────────
@@ -51,4 +51,5 @@ services:
 
 volumes:
   redis_data:
+  db_data:
   # postgres_data:
