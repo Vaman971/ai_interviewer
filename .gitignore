@@ -53,3 +53,5 @@ coverage_report.txt
 # Uploads
 uploads/*
 !uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
