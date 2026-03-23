@@ -1,0 +1,969 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; AI Interviewer Backend 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Architecture Overview" href="architecture.html" />
+    <link rel="prev" title="AI Interviewer Backend Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            AI Interviewer Backend
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-app.main">Main Application</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#app.main.health_check"><code class="docutils literal notranslate"><span class="pre">health_check()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#app.main.lifespan"><code class="docutils literal notranslate"><span class="pre">lifespan()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#api-endpoints">API Endpoints</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-app.api.interviews">Interviews Router</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.complete_interview"><code class="docutils literal notranslate"><span class="pre">complete_interview()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.create_interview"><code class="docutils literal notranslate"><span class="pre">create_interview()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.delete_interview"><code class="docutils literal notranslate"><span class="pre">delete_interview()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.get_next_question"><code class="docutils literal notranslate"><span class="pre">get_next_question()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.get_results"><code class="docutils literal notranslate"><span class="pre">get_results()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.list_interviews"><code class="docutils literal notranslate"><span class="pre">list_interviews()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.start_interview"><code class="docutils literal notranslate"><span class="pre">start_interview()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.submit_answer"><code class="docutils literal notranslate"><span class="pre">submit_answer()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.upload_jd"><code class="docutils literal notranslate"><span class="pre">upload_jd()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.interviews.upload_resume"><code class="docutils literal notranslate"><span class="pre">upload_resume()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-app.api.auth">Auth Router</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.auth.get_me"><code class="docutils literal notranslate"><span class="pre">get_me()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.auth.login"><code class="docutils literal notranslate"><span class="pre">login()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.auth.register"><code class="docutils literal notranslate"><span class="pre">register()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-app.api.media">Media &amp; WebRTC Router</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.media.AvatarSessionRequest"><code class="docutils literal notranslate"><span class="pre">AvatarSessionRequest</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.media.AvatarSpeakRequest"><code class="docutils literal notranslate"><span class="pre">AvatarSpeakRequest</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.media.avatar_speak"><code class="docutils literal notranslate"><span class="pre">avatar_speak()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.media.create_avatar_session"><code class="docutils literal notranslate"><span class="pre">create_avatar_session()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.media.speech_to_text"><code class="docutils literal notranslate"><span class="pre">speech_to_text()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.media.text_to_speech"><code class="docutils literal notranslate"><span class="pre">text_to_speech()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.media.websocket_media_stream"><code class="docutils literal notranslate"><span class="pre">websocket_media_stream()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-app.api.code_execution">Code Sandbox Router</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.code_execution.CodeExecutionRequest"><code class="docutils literal notranslate"><span class="pre">CodeExecutionRequest</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.code_execution.CodeExecutionResponse"><code class="docutils literal notranslate"><span class="pre">CodeExecutionResponse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#app.api.code_execution.execute_code"><code class="docutils literal notranslate"><span class="pre">execute_code()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ai-agents-langgraph">AI Agents (LangGraph)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-agents.interviewer_agent">Interviewer Agent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#agents.interviewer_agent.InterviewerAgent"><code class="docutils literal notranslate"><span class="pre">InterviewerAgent</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#agents.interviewer_agent.evaluate_single_answer"><code class="docutils literal notranslate"><span class="pre">evaluate_single_answer()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-agents.orchestrator">LangGraph Orchestrator</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#agents.orchestrator.InterviewState"><code class="docutils literal notranslate"><span class="pre">InterviewState</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#agents.orchestrator.build_langgraph_workflow"><code class="docutils literal notranslate"><span class="pre">build_langgraph_workflow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#agents.orchestrator.run_preparation_pipeline"><code class="docutils literal notranslate"><span class="pre">run_preparation_pipeline()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#agents.orchestrator.run_scoring_pipeline"><code class="docutils literal notranslate"><span class="pre">run_scoring_pipeline()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-agents.resume_agent">Resume Parsing Agent</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#agents.resume_agent.ResumeAgent"><code class="docutils literal notranslate"><span class="pre">ResumeAgent</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#agents.resume_agent.analyze_resume"><code class="docutils literal notranslate"><span class="pre">analyze_resume()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-services">Core Services</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-app.services.speech_service">Speech &amp; Audio Service</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#app.services.speech_service.SpeechService"><code class="docutils literal notranslate"><span class="pre">SpeechService</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-app.services.avatar_service">Avatar (WebRTC) Service</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#app.services.avatar_service.AvatarService"><code class="docutils literal notranslate"><span class="pre">AvatarService</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#database-models">Database Models</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture Overview</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">AI Interviewer Backend</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
+<p>This section covers the core modules and endpoints of the FastAPI backend and AI Agents.</p>
+<section id="module-app.main">
+<span id="main-application"></span><h2>Main Application<a class="headerlink" href="#module-app.main" title="Link to this heading"></a></h2>
+<p>FastAPI application entrypoint.</p>
+<p>Configures middleware, mounts routers, and manages the application lifecycle.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.main.health_check">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.main.</span></span><span class="sig-name descname"><span class="pre">health_check</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/app/main.html#health_check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.main.health_check" title="Link to this definition"></a></dt>
+<dd><p>Health-check endpoint for monitoring and load balancing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON with status, application name, and environment.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.main.lifespan">
+<span class="sig-prename descclassname"><span class="pre">app.main.</span></span><span class="sig-name descname"><span class="pre">lifespan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FastAPI</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">AsyncGenerator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/app/main.html#lifespan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.main.lifespan" title="Link to this definition"></a></dt>
+<dd><p>Manage application startup and shutdown.</p>
+<p>Creates database tables in development and logs lifecycle events.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> – The FastAPI application instance.</p>
+</dd>
+<dt class="field-even">Yields<span class="colon">:</span></dt>
+<dd class="field-even"><p>Control back to the framework while the application runs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="api-endpoints">
+<h2>API Endpoints<a class="headerlink" href="#api-endpoints" title="Link to this heading"></a></h2>
+<section id="module-app.api.interviews">
+<span id="interviews-router"></span><h3>Interviews Router<a class="headerlink" href="#module-app.api.interviews" title="Link to this heading"></a></h3>
+<p>Interview API routes: full interview lifecycle management.</p>
+<p>Covers creation, file uploads, AI pipeline execution, question delivery,
+answer evaluation, scoring, and results retrieval.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.complete_interview">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">complete_interview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interview_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Result</span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#complete_interview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.complete_interview" title="Link to this definition"></a></dt>
+<dd><p>Complete an interview and generate final scores and feedback.</p>
+<p>Runs the scoring and feedback pipelines, then stores the result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interview_id</strong> – UUID of the interview.</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The populated result record.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.create_interview">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">create_interview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">InterviewCreate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Interview</span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#create_interview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.create_interview" title="Link to this definition"></a></dt>
+<dd><p>Create a new interview session.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Interview settings (type, personality, difficulty).</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The newly created interview.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.delete_interview">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">delete_interview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interview_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#delete_interview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.delete_interview" title="Link to this definition"></a></dt>
+<dd><p>Delete an interview session.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interview_id</strong> – UUID of the interview.</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.get_next_question">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">get_next_question</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interview_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#get_next_question"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.get_next_question" title="Link to this definition"></a></dt>
+<dd><p>Get the next interview question.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interview_id</strong> – UUID of the interview.</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The next question with its metadata.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>HTTPException</strong> – If no questions are available or all have been asked.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.get_results">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">get_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interview_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Result</span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#get_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.get_results" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the final results for a completed interview.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interview_id</strong> – UUID of the interview.</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The result record.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>HTTPException</strong> – If results are not yet available.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.list_interviews">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">list_interviews</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#list_interviews"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.list_interviews" title="Link to this definition"></a></dt>
+<dd><p>List the current user’s interview sessions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>skip</strong> – Number of records to skip (pagination offset).</p></li>
+<li><p><strong>limit</strong> – Maximum number of records to return.</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with <code class="docutils literal notranslate"><span class="pre">interviews</span></code> list and <code class="docutils literal notranslate"><span class="pre">total</span></code> count.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.start_interview">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">start_interview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interview_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Interview</span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#start_interview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.start_interview" title="Link to this definition"></a></dt>
+<dd><p>Start an interview by running the AI preparation pipeline.</p>
+<p>Analyses the resume and JD, identifies skill gaps, and generates
+personalised interview questions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interview_id</strong> – UUID of the interview.</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated interview with status <code class="docutils literal notranslate"><span class="pre">questions_ready</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>HTTPException</strong> – If resume or JD text is missing.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.submit_answer">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">submit_answer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interview_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SubmitAnswer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#submit_answer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.submit_answer" title="Link to this definition"></a></dt>
+<dd><p>Submit and evaluate a candidate’s answer.</p>
+<p>Appends the Q/A pair to the transcript and runs real-time evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interview_id</strong> – UUID of the interview.</p></li>
+<li><p><strong>data</strong> – The answer payload.</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Evaluation score, feedback, and optional follow-up.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.upload_jd">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">upload_jd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interview_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jd_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Form(None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UploadFile</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">File(None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Interview</span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#upload_jd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.upload_jd" title="Link to this definition"></a></dt>
+<dd><p>Upload a job description as text or file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interview_id</strong> – UUID of the interview.</p></li>
+<li><p><strong>jd_text</strong> – Plain-text job description.</p></li>
+<li><p><strong>file</strong> – Optional uploaded JD file.</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated interview.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>HTTPException</strong> – If neither text nor file is provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.interviews.upload_resume">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.interviews.</span></span><span class="sig-name descname"><span class="pre">upload_resume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interview_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UploadFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Interview</span></span></span><a class="reference internal" href="_modules/app/api/interviews.html#upload_resume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.interviews.upload_resume" title="Link to this definition"></a></dt>
+<dd><p>Upload a resume file for an interview session.</p>
+<p>Saves the file and extracts its text content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interview_id</strong> – UUID of the interview.</p></li>
+<li><p><strong>file</strong> – Uploaded resume file (PDF or TXT).</p></li>
+<li><p><strong>current_user</strong> – The authenticated user.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The updated interview.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>HTTPException</strong> – If the interview is not found or doesn’t belong to the user.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-app.api.auth">
+<span id="auth-router"></span><h3>Auth Router<a class="headerlink" href="#module-app.api.auth" title="Link to this heading"></a></h3>
+<p>Authentication API routes: register, login, and profile retrieval.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.auth.get_me">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.auth.</span></span><span class="sig-name descname"><span class="pre">get_me</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_current_user&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">User</span></span></span><a class="reference internal" href="_modules/app/api/auth.html#get_me"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.auth.get_me" title="Link to this definition"></a></dt>
+<dd><p>Return the authenticated user’s profile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>current_user</strong> – The user extracted from the JWT bearer token.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The current user record.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.auth.login">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.auth.</span></span><span class="sig-name descname"><span class="pre">login</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UserLogin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/app/api/auth.html#login"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.auth.login" title="Link to this definition"></a></dt>
+<dd><p>Authenticate a user and return a JWT access token.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Login payload with email and password.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with <code class="docutils literal notranslate"><span class="pre">access_token</span></code> and <code class="docutils literal notranslate"><span class="pre">token_type</span></code>.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>HTTPException</strong> – If the credentials are invalid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.auth.register">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.auth.</span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UserRegister</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Depends(dependency=&lt;function</span> <span class="pre">get_db&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">User</span></span></span><a class="reference internal" href="_modules/app/api/auth.html#register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.auth.register" title="Link to this definition"></a></dt>
+<dd><p>Register a new user account.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Registration payload with email, password, and optional name.</p></li>
+<li><p><strong>db</strong> – Async database session.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The newly created user record.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>HTTPException</strong> – If the email is already registered.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-app.api.media">
+<span id="media-webrtc-router"></span><h3>Media &amp; WebRTC Router<a class="headerlink" href="#module-app.api.media" title="Link to this heading"></a></h3>
+<p>Media API routes: STT, TTS, and Avatar streaming endpoints.</p>
+<p>Provides WebSockets and standard HTTP endpoints for Voice/Video interactions.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="app.api.media.AvatarSessionRequest">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.media.</span></span><span class="sig-name descname"><span class="pre">AvatarSessionRequest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">personality_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'professional'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/media.html#AvatarSessionRequest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.media.AvatarSessionRequest" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.media.AvatarSessionRequest.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#app.api.media.AvatarSessionRequest.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.media.AvatarSessionRequest.personality_mode">
+<span class="sig-name descname"><span class="pre">personality_mode</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.media.AvatarSessionRequest.personality_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="app.api.media.AvatarSpeakRequest">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.media.</span></span><span class="sig-name descname"><span class="pre">AvatarSpeakRequest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/media.html#AvatarSpeakRequest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.media.AvatarSpeakRequest" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.media.AvatarSpeakRequest.conversation_id">
+<span class="sig-name descname"><span class="pre">conversation_id</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.media.AvatarSpeakRequest.conversation_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.media.AvatarSpeakRequest.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#app.api.media.AvatarSpeakRequest.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.media.AvatarSpeakRequest.text">
+<span class="sig-name descname"><span class="pre">text</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.media.AvatarSpeakRequest.text" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.media.avatar_speak">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.media.</span></span><span class="sig-name descname"><span class="pre">avatar_speak</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.api.media.AvatarSpeakRequest" title="app.api.media.AvatarSpeakRequest"><span class="pre">AvatarSpeakRequest</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/media.html#avatar_speak"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.media.avatar_speak" title="Link to this definition"></a></dt>
+<dd><p>Send text directly to an active Tavus conversation for the avatar to speak.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.media.create_avatar_session">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.media.</span></span><span class="sig-name descname"><span class="pre">create_avatar_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.api.media.AvatarSessionRequest" title="app.api.media.AvatarSessionRequest"><span class="pre">AvatarSessionRequest</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/media.html#create_avatar_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.media.create_avatar_session" title="Link to this definition"></a></dt>
+<dd><p>Initialize a Tavus conversational video WebRTC session.
+Returns {conversation_id, conversation_url}.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.media.speech_to_text">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.media.</span></span><span class="sig-name descname"><span class="pre">speech_to_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UploadFile</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">File(PydanticUndefined)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/media.html#speech_to_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.media.speech_to_text" title="Link to this definition"></a></dt>
+<dd><p>Convert uploaded audio file to text.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.media.text_to_speech">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.media.</span></span><span class="sig-name descname"><span class="pre">text_to_speech</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/media.html#text_to_speech"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.media.text_to_speech" title="Link to this definition"></a></dt>
+<dd><p>Convert text to speech audio. (Useful for fallback HTTP pooling)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.media.websocket_media_stream">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.media.</span></span><span class="sig-name descname"><span class="pre">websocket_media_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">websocket</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">WebSocket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/media.html#websocket_media_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.media.websocket_media_stream" title="Link to this definition"></a></dt>
+<dd><p>Bidirectional WebSocket for real-time STT and Interviewer responses.</p>
+<p>Accepts audio chunks from the client, transcribes them, and eventually
+can return the AI’s spoken response (TTS audio) directly through the socket.</p>
+</dd></dl>
+
+</section>
+<section id="module-app.api.code_execution">
+<span id="code-sandbox-router"></span><h3>Code Sandbox Router<a class="headerlink" href="#module-app.api.code_execution" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionRequest">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.code_execution.</span></span><span class="sig-name descname"><span class="pre">CodeExecutionRequest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'*'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/code_execution.html#CodeExecutionRequest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.code_execution.CodeExecutionRequest" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionRequest.code">
+<span class="sig-name descname"><span class="pre">code</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionRequest.code" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionRequest.language">
+<span class="sig-name descname"><span class="pre">language</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionRequest.language" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionRequest.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionRequest.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionRequest.version">
+<span class="sig-name descname"><span class="pre">version</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionRequest.version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionResponse">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.code_execution.</span></span><span class="sig-name descname"><span class="pre">CodeExecutionResponse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">stdout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stderr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/code_execution.html#CodeExecutionResponse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.code_execution.CodeExecutionResponse" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionResponse.compile_output">
+<span class="sig-name descname"><span class="pre">compile_output</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionResponse.compile_output" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionResponse.language">
+<span class="sig-name descname"><span class="pre">language</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionResponse.language" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionResponse.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionResponse.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionResponse.stderr">
+<span class="sig-name descname"><span class="pre">stderr</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionResponse.stderr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionResponse.stdout">
+<span class="sig-name descname"><span class="pre">stdout</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionResponse.stdout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="app.api.code_execution.CodeExecutionResponse.version">
+<span class="sig-name descname"><span class="pre">version</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#app.api.code_execution.CodeExecutionResponse.version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.api.code_execution.execute_code">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.api.code_execution.</span></span><span class="sig-name descname"><span class="pre">execute_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#app.api.code_execution.CodeExecutionRequest" title="app.api.code_execution.CodeExecutionRequest"><span class="pre">CodeExecutionRequest</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/app/api/code_execution.html#execute_code"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.api.code_execution.execute_code" title="Link to this definition"></a></dt>
+<dd><p>Executes the given code securely by proxying to the public Piston API.
+This acts as a remote code sandbox for the technical/DSA rounds.</p>
+</dd></dl>
+
+</section>
+</section>
+<section id="ai-agents-langgraph">
+<h2>AI Agents (LangGraph)<a class="headerlink" href="#ai-agents-langgraph" title="Link to this heading"></a></h2>
+<section id="module-agents.interviewer_agent">
+<span id="interviewer-agent"></span><h3>Interviewer Agent<a class="headerlink" href="#module-agents.interviewer_agent" title="Link to this heading"></a></h3>
+<p>Interviewer Agent.</p>
+<p>Evaluates candidate answers in real-time during the interview,
+providing scores, feedback, and follow-up questions.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="agents.interviewer_agent.InterviewerAgent">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">agents.interviewer_agent.</span></span><span class="sig-name descname"><span class="pre">InterviewerAgent</span></span><a class="reference internal" href="_modules/agents/interviewer_agent.html#InterviewerAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.interviewer_agent.InterviewerAgent" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgent</span></code></p>
+<p>Agent that evaluates individual answers during a live interview.</p>
+<p>Provides per-answer scoring, qualitative feedback, strength/weakness
+identification, and optional follow-up questions.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="agents.interviewer_agent.InterviewerAgent.evaluate_answer">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">evaluate_answer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">question_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">answer_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">personality_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'professional'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jd_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/agents/interviewer_agent.html#InterviewerAgent.evaluate_answer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.interviewer_agent.InterviewerAgent.evaluate_answer" title="Link to this definition"></a></dt>
+<dd><p>Evaluate a single candidate answer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>question_text</strong> – The interview question that was asked.</p></li>
+<li><p><strong>answer_text</strong> – The candidate’s answer.</p></li>
+<li><p><strong>personality_mode</strong> – Interviewer style for the evaluation tone.</p></li>
+<li><p><strong>jd_context</strong> – Job description context for relevance scoring.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with <code class="docutils literal notranslate"><span class="pre">score</span></code>, <code class="docutils literal notranslate"><span class="pre">feedback</span></code>, <code class="docutils literal notranslate"><span class="pre">follow_up</span></code>, etc.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="agents.interviewer_agent.InterviewerAgent.run">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/agents/interviewer_agent.html#InterviewerAgent.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.interviewer_agent.InterviewerAgent.run" title="Link to this definition"></a></dt>
+<dd><p>No-op for pipeline mode — use <code class="docutils literal notranslate"><span class="pre">evaluate_answer</span></code> instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state</strong> – Pipeline state (unused).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The unmodified state.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="agents.interviewer_agent.evaluate_single_answer">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">agents.interviewer_agent.</span></span><span class="sig-name descname"><span class="pre">evaluate_single_answer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">question_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">answer_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jd_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">personality_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'professional'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/agents/interviewer_agent.html#evaluate_single_answer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.interviewer_agent.evaluate_single_answer" title="Link to this definition"></a></dt>
+<dd><p>Evaluate a single answer — convenience function for API routes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>question_text</strong> – The interview question.</p></li>
+<li><p><strong>answer_text</strong> – The candidate’s answer.</p></li>
+<li><p><strong>jd_context</strong> – Job description context.</p></li>
+<li><p><strong>personality_mode</strong> – Interviewer personality style.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with <code class="docutils literal notranslate"><span class="pre">score</span></code>, <code class="docutils literal notranslate"><span class="pre">feedback</span></code>, and <code class="docutils literal notranslate"><span class="pre">follow_up</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-agents.orchestrator">
+<span id="langgraph-orchestrator"></span><h3>LangGraph Orchestrator<a class="headerlink" href="#module-agents.orchestrator" title="Link to this heading"></a></h3>
+<p>LangGraph Orchestrator.</p>
+<p>Wires all agents into a pipeline for the AI interview workflow.
+Provides two main pipelines:</p>
+<ol class="arabic simple">
+<li><p><strong>Preparation</strong>: resume → jd → skill_gap → questions</p></li>
+<li><p><strong>Scoring</strong>: evaluate answers → generate feedback</p></li>
+</ol>
+<dl class="py class">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">agents.orchestrator.</span></span><span class="sig-name descname"><span class="pre">InterviewState</span></span><a class="reference internal" href="_modules/agents/orchestrator.html#InterviewState"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.orchestrator.InterviewState" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TypedDict</span></code></p>
+<p>Shared state flowing through the agent pipeline.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.difficulty_level">
+<span class="sig-name descname"><span class="pre">difficulty_level</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.difficulty_level" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.dsa_problems">
+<span class="sig-name descname"><span class="pre">dsa_problems</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.dsa_problems" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.error">
+<span class="sig-name descname"><span class="pre">error</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.feedback_result">
+<span class="sig-name descname"><span class="pre">feedback_result</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.feedback_result" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.interview_type">
+<span class="sig-name descname"><span class="pre">interview_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.interview_type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.jd_analysis">
+<span class="sig-name descname"><span class="pre">jd_analysis</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.jd_analysis" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.jd_text">
+<span class="sig-name descname"><span class="pre">jd_text</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.jd_text" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.personality_mode">
+<span class="sig-name descname"><span class="pre">personality_mode</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.personality_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.questions">
+<span class="sig-name descname"><span class="pre">questions</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.questions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.resume_analysis">
+<span class="sig-name descname"><span class="pre">resume_analysis</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.resume_analysis" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.resume_text">
+<span class="sig-name descname"><span class="pre">resume_text</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.resume_text" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.scoring_result">
+<span class="sig-name descname"><span class="pre">scoring_result</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.scoring_result" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.skill_gap_report">
+<span class="sig-name descname"><span class="pre">skill_gap_report</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.skill_gap_report" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="agents.orchestrator.InterviewState.transcript">
+<span class="sig-name descname"><span class="pre">transcript</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><a class="headerlink" href="#agents.orchestrator.InterviewState.transcript" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="agents.orchestrator.build_langgraph_workflow">
+<span class="sig-prename descclassname"><span class="pre">agents.orchestrator.</span></span><span class="sig-name descname"><span class="pre">build_langgraph_workflow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="_modules/agents/orchestrator.html#build_langgraph_workflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.orchestrator.build_langgraph_workflow" title="Link to this definition"></a></dt>
+<dd><p>Build a LangGraph StateGraph for advanced pipeline usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The compiled LangGraph workflow, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if LangGraph
+is not installed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="agents.orchestrator.run_preparation_pipeline">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">agents.orchestrator.</span></span><span class="sig-name descname"><span class="pre">run_preparation_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resume_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jd_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interview_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">personality_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'professional'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">difficulty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'medium'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/agents/orchestrator.html#run_preparation_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.orchestrator.run_preparation_pipeline" title="Link to this definition"></a></dt>
+<dd><p>Run the interview preparation pipeline.</p>
+<p>Executes sequentially: Resume Analysis → JD Analysis →
+Skill Gap Detection → Question Generation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>resume_text</strong> – Extracted text from the candidate’s resume.</p></li>
+<li><p><strong>jd_text</strong> – Job description text.</p></li>
+<li><p><strong>interview_type</strong> – Type of interview (full, technical, behavioral, dsa).</p></li>
+<li><p><strong>personality_mode</strong> – Interviewer personality setting.</p></li>
+<li><p><strong>difficulty</strong> – Question difficulty level.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The complete pipeline state with all analysis results.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If any pipeline step fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="agents.orchestrator.run_scoring_pipeline">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">agents.orchestrator.</span></span><span class="sig-name descname"><span class="pre">run_scoring_pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transcript</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">questions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jd_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resume_analysis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/agents/orchestrator.html#run_scoring_pipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.orchestrator.run_scoring_pipeline" title="Link to this definition"></a></dt>
+<dd><p>Run the scoring and feedback pipeline.</p>
+<p>Executes sequentially: Scoring → Feedback Generation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transcript</strong> – List of Q/A pairs (or JSON string).</p></li>
+<li><p><strong>questions</strong> – List of questions (or JSON string).</p></li>
+<li><p><strong>jd_text</strong> – Job description text for context.</p></li>
+<li><p><strong>resume_analysis</strong> – Parsed resume analysis (or JSON string).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with <code class="docutils literal notranslate"><span class="pre">scores</span></code> and <code class="docutils literal notranslate"><span class="pre">feedback</span></code> sub-dicts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-agents.resume_agent">
+<span id="resume-parsing-agent"></span><h3>Resume Parsing Agent<a class="headerlink" href="#module-agents.resume_agent" title="Link to this heading"></a></h3>
+<p>Resume Analyzer Agent.</p>
+<p>Extracts a structured candidate profile from resume text using the LLM.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="agents.resume_agent.ResumeAgent">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">agents.resume_agent.</span></span><span class="sig-name descname"><span class="pre">ResumeAgent</span></span><a class="reference internal" href="_modules/agents/resume_agent.html#ResumeAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.resume_agent.ResumeAgent" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgent</span></code></p>
+<p>Agent that analyses resume text and extracts a structured profile.</p>
+<p>Produces a dictionary containing skills, experience, projects,
+education, and professional strengths.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="agents.resume_agent.ResumeAgent.run">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/agents/resume_agent.html#ResumeAgent.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.resume_agent.ResumeAgent.run" title="Link to this definition"></a></dt>
+<dd><p>Analyse resume text and enrich the pipeline state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state</strong> – Must contain <code class="docutils literal notranslate"><span class="pre">resume_text</span></code> (str).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The state updated with <code class="docutils literal notranslate"><span class="pre">resume_analysis</span></code> (dict).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="agents.resume_agent.analyze_resume">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">agents.resume_agent.</span></span><span class="sig-name descname"><span class="pre">analyze_resume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/agents/resume_agent.html#analyze_resume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#agents.resume_agent.analyze_resume" title="Link to this definition"></a></dt>
+<dd><p>Module-level convenience function for the orchestrator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state</strong> – Pipeline state with <code class="docutils literal notranslate"><span class="pre">resume_text</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated state with <code class="docutils literal notranslate"><span class="pre">resume_analysis</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<section id="core-services">
+<h2>Core Services<a class="headerlink" href="#core-services" title="Link to this heading"></a></h2>
+<section id="module-app.services.speech_service">
+<span id="speech-audio-service"></span><h3>Speech &amp; Audio Service<a class="headerlink" href="#module-app.services.speech_service" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="app.services.speech_service.SpeechService">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.services.speech_service.</span></span><span class="sig-name descname"><span class="pre">SpeechService</span></span><a class="reference internal" href="_modules/app/services/speech_service.html#SpeechService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.services.speech_service.SpeechService" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Service for handling Text-to-Speech (TTS) and Speech-to-Text (STT).</p>
+<p>Uses Deepgram for both STT (transcription) and TTS (Aura models).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="app.services.speech_service.SpeechService.speech_to_text">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">speech_to_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">audio_bytes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'audio.wav'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/app/services/speech_service.html#SpeechService.speech_to_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.services.speech_service.SpeechService.speech_to_text" title="Link to this definition"></a></dt>
+<dd><p>Convert spoken audio back to text using Deepgram STT.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_bytes</strong> – The raw audio data.</p></li>
+<li><p><strong>filename</strong> – The filename (useful for extensions).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The transcribed text.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.services.speech_service.SpeechService.text_to_speech">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">text_to_speech</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voice_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'aura-asteria-en'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">personality_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'professional'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="_modules/app/services/speech_service.html#SpeechService.text_to_speech"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.services.speech_service.SpeechService.text_to_speech" title="Link to this definition"></a></dt>
+<dd><p>Convert conversational text to spoken audio using Deepgram TTS.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> – The text to convert to speech.</p></li>
+<li><p><strong>voice_id</strong> – The default Deepgram Aura voice profile (overridden by personality_mode if set).</p></li>
+<li><p><strong>personality_mode</strong> – The tone of the interviewer (friendly, strict, professional).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The raw audio bytes (e.g., MP3 or WAV format).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-app.services.avatar_service">
+<span id="avatar-webrtc-service"></span><h3>Avatar (WebRTC) Service<a class="headerlink" href="#module-app.services.avatar_service" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="app.services.avatar_service.AvatarService">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">app.services.avatar_service.</span></span><span class="sig-name descname"><span class="pre">AvatarService</span></span><a class="reference internal" href="_modules/app/services/avatar_service.html#AvatarService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.services.avatar_service.AvatarService" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="app.services.avatar_service.AvatarService.create_conversation">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">create_conversation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">personality_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'professional'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/app/services/avatar_service.html#AvatarService.create_conversation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.services.avatar_service.AvatarService.create_conversation" title="Link to this definition"></a></dt>
+<dd><p>Create a new Tavus WebRTC conversation.
+Returns the conversation_id, conversation_url (WebRTC endpoint).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="app.services.avatar_service.AvatarService.send_message">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">send_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/app/services/avatar_service.html#AvatarService.send_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.services.avatar_service.AvatarService.send_message" title="Link to this definition"></a></dt>
+<dd><p>Make the active Tavus avatar speak the text asynchronously.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="database-models">
+<h2>Database Models<a class="headerlink" href="#database-models" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="AI Interviewer Backend Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="architecture.html" class="btn btn-neutral float-right" title="Architecture Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Antigravity.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

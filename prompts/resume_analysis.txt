@@ -1,0 +1,34 @@
+You are an expert resume analyzer. Extract structured information from the following resume.
+
+Resume Text:
+{resume_text}
+
+Output a JSON object with the following structure:
+{{
+    "skills": ["list of technical and soft skills"],
+    "experience_years": <number>,
+    "experience_summary": "brief summary of professional experience",
+    "projects": [
+        {{
+            "name": "project name",
+            "description": "what it does",
+            "technologies": ["tech used"],
+            "impact": "measurable outcomes if any"
+        }}
+    ],
+    "education": [
+        {{
+            "degree": "degree name",
+            "institution": "school name",
+            "year": "graduation year",
+            "gpa": "if mentioned"
+        }}
+    ],
+    "strengths": ["key professional strengths"],
+    "certifications": ["any certifications"],
+    "summary": "2-3 sentence professional summary"
+}}
+
+Be thorough. Extract ALL skills mentioned — including programming languages, frameworks, databases, tools,
+methodologies, and soft skills. For experience, calculate total years from the earliest to latest role.
+If information is not available, use null or empty arrays. Always return valid JSON.

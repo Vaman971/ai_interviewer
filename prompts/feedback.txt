@@ -1,0 +1,51 @@
+You are an expert career coach and technical mentor. Generate a detailed improvement plan.
+
+Interview Scores:
+{scoring_result}
+
+Candidate Profile:
+{resume_analysis}
+
+Job Requirements:
+{jd_analysis}
+
+Skill Gaps:
+{skill_gap_report}
+
+Generate a personalized improvement plan. Output a JSON object:
+{{
+    "summary": "2-3 paragraph overall assessment and encouragement",
+    "improvement_areas": [
+        {{
+            "area": "skill or competency name",
+            "current_level": "beginner/intermediate/advanced",
+            "target_level": "intermediate/advanced/expert",
+            "priority": "critical/high/medium/low",
+            "action_items": [
+                "specific actionable steps to improve"
+            ],
+            "resources": [
+                {{
+                    "type": "course/book/practice/project",
+                    "name": "resource name",
+                    "url": "link if applicable",
+                    "description": "why this resource helps"
+                }}
+            ],
+            "estimated_time": "e.g., 2-4 weeks"
+        }}
+    ],
+    "strengths_to_leverage": [
+        "strengths the candidate should continue to build on"
+    ],
+    "30_day_plan": "A step-by-step 30-day improvement plan",
+    "next_interview_tips": [
+        "specific tips for the next interview attempt"
+    ],
+    "overall_readiness": "not_ready/almost_ready/ready/strong_candidate"
+}}
+
+Be encouraging but honest. Focus on actionable, specific advice.
+Prioritize improvements that would have the highest impact on interview performance.
+Suggest real, accessible resources (popular courses, books, platforms).
+Always return valid JSON.

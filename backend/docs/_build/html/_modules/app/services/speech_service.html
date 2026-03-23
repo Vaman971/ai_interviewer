@@ -1,0 +1,205 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.services.speech_service &mdash; AI Interviewer Backend 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            AI Interviewer Backend
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture.html">Architecture Overview</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">AI Interviewer Backend</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">app.services.speech_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.services.speech_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">BinaryIO</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">httpx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTTPException</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">backend.app.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_settings</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">settings</span> <span class="o">=</span> <span class="n">get_settings</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SpeechService">
+<a class="viewcode-back" href="../../../api.html#app.services.speech_service.SpeechService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SpeechService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Service for handling Text-to-Speech (TTS) and Speech-to-Text (STT).</span>
+<span class="sd">    </span>
+<span class="sd">    Uses Deepgram for both STT (transcription) and TTS (Aura models).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SpeechService.text_to_speech">
+<a class="viewcode-back" href="../../../api.html#app.services.speech_service.SpeechService.text_to_speech">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">text_to_speech</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">voice_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;aura-asteria-en&quot;</span><span class="p">,</span> <span class="n">personality_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;professional&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert conversational text to spoken audio using Deepgram TTS.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            text: The text to convert to speech.</span>
+<span class="sd">            voice_id: The default Deepgram Aura voice profile (overridden by personality_mode if set).</span>
+<span class="sd">            personality_mode: The tone of the interviewer (friendly, strict, professional).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The raw audio bytes (e.g., MP3 or WAV format).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">personality_mode</span> <span class="o">==</span> <span class="s2">&quot;friendly&quot;</span><span class="p">:</span>
+            <span class="n">voice_id</span> <span class="o">=</span> <span class="s2">&quot;aura-asteria-en&quot;</span> <span class="c1"># Warm female voice</span>
+        <span class="k">elif</span> <span class="n">personality_mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;strict&quot;</span><span class="p">,</span> <span class="s2">&quot;faang&quot;</span><span class="p">]:</span>
+            <span class="n">voice_id</span> <span class="o">=</span> <span class="s2">&quot;aura-orion-en&quot;</span> <span class="c1"># Stern male voice</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">voice_id</span> <span class="o">=</span> <span class="s2">&quot;aura-arcas-en&quot;</span> <span class="c1"># Professional male voice</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TTS requested for: &#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&#39; using voice: </span><span class="si">{</span><span class="n">voice_id</span><span class="si">}</span><span class="s2"> (mode: </span><span class="si">{</span><span class="n">personality_mode</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        
+        <span class="n">api_key</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">deepgram_api_key</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Deepgram API key missing. Returning stub audio.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">b</span><span class="s2">&quot;RIFF</span><span class="se">\\</span><span class="s2">x24</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x00WAVEfmt </span><span class="se">\\</span><span class="s2">x10</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x01</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x01</span><span class="se">\\</span><span class="s2">x00D</span><span class="se">\\</span><span class="s2">xac</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x88X</span><span class="se">\\</span><span class="s2">x01</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x02</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x10</span><span class="se">\\</span><span class="s2">x00data</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x00</span><span class="se">\\</span><span class="s2">x00&quot;</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://api.deepgram.com/v1/speak?model=</span><span class="si">{</span><span class="n">voice_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Token </span><span class="si">{</span><span class="n">api_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span>
+        <span class="p">}</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">}</span>
+
+        <span class="k">async</span> <span class="k">with</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deepgram TTS error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Text-to-Speech generation failed.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpeechService.speech_to_text">
+<a class="viewcode-back" href="../../../api.html#app.services.speech_service.SpeechService.speech_to_text">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">speech_to_text</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">audio_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;audio.wav&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert spoken audio back to text using Deepgram STT.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            audio_bytes: The raw audio data.</span>
+<span class="sd">            filename: The filename (useful for extensions).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The transcribed text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;STT requested for audio payload of size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">audio_bytes</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+        
+        <span class="n">api_key</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">deepgram_api_key</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Deepgram API key missing. Returning stub transcript.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">&quot;This is a transcribed mock response from the candidate.&quot;</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://api.deepgram.com/v1/listen?model=nova-2&amp;smart_format=true&quot;</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Token </span><span class="si">{</span><span class="n">api_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/octet-stream&quot;</span>
+        <span class="p">}</span>
+
+        <span class="k">async</span> <span class="k">with</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">audio_bytes</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">15.0</span><span class="p">)</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+                <span class="n">transcript</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;results&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;channels&quot;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alternatives&quot;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transcript&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">transcript</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deepgram STT error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Speech-to-Text transcription failed.&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Antigravity.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

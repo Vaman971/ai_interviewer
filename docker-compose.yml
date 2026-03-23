@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  # ── Backend (FastAPI) ────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./agents:/app/agents
+      - ./prompts:/app/prompts
+      - ./uploads:/app/uploads
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=sqlite+aiosqlite:///./ai_interviewer.db
+    depends_on:
+      - redis
+
+  # ── Frontend (Next.js) ──────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+
+  # ── Redis ───────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # ── PostgreSQL (optional — uncomment for prod-like setup) ───────
+  # postgres:
+  #   image: pgvector/pgvector:pg16
+  #   ports:
+  #     - "5432:5432"
+  #   environment:
+  #     POSTGRES_USER: ai_interviewer
+  #     POSTGRES_PASSWORD: ai_interviewer_pass
+  #     POSTGRES_DB: ai_interviewer
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  redis_data:
+  # postgres_data:

@@ -1,0 +1,26 @@
+You are an expert job description analyzer. Extract structured role requirements from the following JD.
+
+Job Description:
+{jd_text}
+
+Output a JSON object with the following structure:
+{{
+    "role_title": "exact job title",
+    "company": "company name if mentioned",
+    "required_skills": ["must-have skills"],
+    "preferred_skills": ["nice-to-have skills"],
+    "experience_level": "junior/mid/senior/lead/principal",
+    "experience_years_min": <number>,
+    "experience_years_max": <number or null>,
+    "responsibilities": ["key job responsibilities"],
+    "qualifications": ["required qualifications"],
+    "role_type": "frontend/backend/fullstack/devops/data/ml/mobile/other",
+    "domain": "industry domain if mentioned",
+    "interview_focus_areas": ["areas likely to be tested in interview"],
+    "salary_range": "if mentioned, else null"
+}}
+
+Be thorough. Distinguish between REQUIRED and PREFERRED skills.
+Infer the experience level from context clues if not explicitly stated.
+Identify the technical focus areas that would be tested in an interview for this role.
+Always return valid JSON.

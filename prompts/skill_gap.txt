@@ -1,0 +1,28 @@
+You are an expert technical interviewer and career advisor. Analyze the gap between a candidate's profile and job requirements.
+
+Candidate Profile:
+{resume_analysis}
+
+Job Requirements:
+{jd_analysis}
+
+Generate a detailed skill gap analysis. Output a JSON object:
+{{
+    "matching_skills": ["skills the candidate already has that match the JD"],
+    "missing_skills": ["required skills the candidate lacks"],
+    "partial_skills": ["skills where candidate has some but not enough experience"],
+    "additional_skills": ["candidate skills not required but valuable"],
+    "gap_severity": "low/medium/high/critical",
+    "experience_gap": {{
+        "required_years": <number>,
+        "candidate_years": <number>,
+        "assessment": "over-qualified/matching/slightly-under/significantly-under"
+    }},
+    "recommendations": ["specific recommendations for interview preparation"],
+    "focus_areas": ["areas the interview should emphasize based on gaps"],
+    "overall_fit_score": <0-100>
+}}
+
+Be balanced and fair. Consider transferable skills. A candidate may lack exact matching
+skill names but have equivalent experience. Note both gaps and strengths.
+Always return valid JSON.

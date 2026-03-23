@@ -1,0 +1,701 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.api.interviews &mdash; AI Interviewer Backend 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            AI Interviewer Backend
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture.html">Architecture Overview</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">AI Interviewer Backend</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">app.api.interviews</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.api.interviews</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Interview API routes: full interview lifecycle management.</span>
+
+<span class="sd">Covers creation, file uploads, AI pipeline execution, question delivery,</span>
+<span class="sd">answer evaluation, scoring, and results retrieval.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIRouter</span><span class="p">,</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">UploadFile</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">Form</span><span class="p">,</span> <span class="n">File</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">func</span><span class="p">,</span> <span class="n">select</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.ext.asyncio</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncSession</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">backend.app.db.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_db</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">backend.app.models.interview</span><span class="w"> </span><span class="kn">import</span> <span class="n">Interview</span><span class="p">,</span> <span class="n">InterviewStatus</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">backend.app.models.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">Result</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">backend.app.models.user</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">backend.app.schemas.interview</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AnswerEvaluation</span><span class="p">,</span>
+    <span class="n">InterviewCreate</span><span class="p">,</span>
+    <span class="n">InterviewListResponse</span><span class="p">,</span>
+    <span class="n">InterviewResponse</span><span class="p">,</span>
+    <span class="n">QuestionResponse</span><span class="p">,</span>
+    <span class="n">SubmitAnswer</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">backend.app.schemas.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResultResponse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">backend.app.services.auth_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_current_user</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">backend.app.services.file_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_text_from_file</span><span class="p">,</span> <span class="n">save_upload</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">router</span> <span class="o">=</span> <span class="n">APIRouter</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;/api/interviews&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;interviews&quot;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="create_interview">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.create_interview">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+    <span class="s2">&quot;/&quot;</span><span class="p">,</span>
+    <span class="n">response_model</span><span class="o">=</span><span class="n">InterviewResponse</span><span class="p">,</span>
+    <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_201_CREATED</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">create_interview</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">InterviewCreate</span><span class="p">,</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Interview</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new interview session.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data: Interview settings (type, personality, difficulty).</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The newly created interview.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="n">Interview</span><span class="p">(</span>
+        <span class="n">user_id</span><span class="o">=</span><span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">jd_text</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">jd_text</span><span class="p">,</span>
+        <span class="n">interview_type</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">interview_type</span><span class="p">,</span>
+        <span class="n">personality_mode</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">personality_mode</span><span class="p">,</span>
+        <span class="n">difficulty_level</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">difficulty_level</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">interview</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">interview</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">interview</span></div>
+
+
+
+<div class="viewcode-block" id="upload_resume">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.upload_resume">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/</span><span class="si">{interview_id}</span><span class="s2">/upload-resume&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">InterviewResponse</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">upload_resume</span><span class="p">(</span>
+    <span class="n">interview_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">file</span><span class="p">:</span> <span class="n">UploadFile</span><span class="p">,</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Interview</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Upload a resume file for an interview session.</span>
+
+<span class="sd">    Saves the file and extracts its text content.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interview_id: UUID of the interview.</span>
+<span class="sd">        file: Uploaded resume file (PDF or TXT).</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The updated interview.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        HTTPException: If the interview is not found or doesn&#39;t belong to the user.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_get_user_interview</span><span class="p">(</span><span class="n">interview_id</span><span class="p">,</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+
+    <span class="n">filename</span><span class="p">,</span> <span class="n">filepath</span> <span class="o">=</span> <span class="k">await</span> <span class="n">save_upload</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">subfolder</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">extract_text_from_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+
+    <span class="n">interview</span><span class="o">.</span><span class="n">resume_filename</span> <span class="o">=</span> <span class="n">filename</span>
+    <span class="n">interview</span><span class="o">.</span><span class="n">resume_text</span> <span class="o">=</span> <span class="n">text</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">interview</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">interview</span></div>
+
+
+
+<div class="viewcode-block" id="upload_jd">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.upload_jd">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/</span><span class="si">{interview_id}</span><span class="s2">/upload-jd&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">InterviewResponse</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">upload_jd</span><span class="p">(</span>
+    <span class="n">interview_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">jd_text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Form</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>
+    <span class="n">file</span><span class="p">:</span> <span class="n">UploadFile</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Interview</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Upload a job description as text or file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interview_id: UUID of the interview.</span>
+<span class="sd">        jd_text: Plain-text job description.</span>
+<span class="sd">        file: Optional uploaded JD file.</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The updated interview.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        HTTPException: If neither text nor file is provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_get_user_interview</span><span class="p">(</span><span class="n">interview_id</span><span class="p">,</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">filepath</span> <span class="o">=</span> <span class="k">await</span> <span class="n">save_upload</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">subfolder</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">interview</span><span class="o">.</span><span class="n">jd_text</span> <span class="o">=</span> <span class="n">extract_text_from_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">jd_text</span><span class="p">:</span>
+        <span class="n">interview</span><span class="o">.</span><span class="n">jd_text</span> <span class="o">=</span> <span class="n">jd_text</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Provide either jd_text or a file&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">interview</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">interview</span></div>
+
+
+
+<div class="viewcode-block" id="start_interview">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.start_interview">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/</span><span class="si">{interview_id}</span><span class="s2">/start&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">InterviewResponse</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start_interview</span><span class="p">(</span>
+    <span class="n">interview_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Interview</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Start an interview by running the AI preparation pipeline.</span>
+
+<span class="sd">    Analyses the resume and JD, identifies skill gaps, and generates</span>
+<span class="sd">    personalised interview questions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interview_id: UUID of the interview.</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The updated interview with status ``questions_ready``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        HTTPException: If resume or JD text is missing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_get_user_interview</span><span class="p">(</span><span class="n">interview_id</span><span class="p">,</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">interview</span><span class="o">.</span><span class="n">resume_text</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Upload a resume before starting&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">interview</span><span class="o">.</span><span class="n">jd_text</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Upload a job description before starting&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">interview</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">InterviewStatus</span><span class="o">.</span><span class="n">ANALYZING</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">agents.orchestrator</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_preparation_pipeline</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">run_preparation_pipeline</span><span class="p">(</span>
+            <span class="n">resume_text</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">resume_text</span><span class="p">,</span>
+            <span class="n">jd_text</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">jd_text</span><span class="p">,</span>
+            <span class="n">interview_type</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">interview_type</span><span class="p">,</span>
+            <span class="n">difficulty</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">difficulty_level</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">interview</span><span class="o">.</span><span class="n">resume_analysis</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resume_analysis&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">interview</span><span class="o">.</span><span class="n">jd_analysis</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;jd_analysis&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">interview</span><span class="o">.</span><span class="n">skill_gap_report</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skill_gap&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">interview</span><span class="o">.</span><span class="n">questions</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;questions&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+        <span class="n">interview</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">InterviewStatus</span><span class="o">.</span><span class="n">QUESTIONS_READY</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Preparation pipeline failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+        <span class="n">interview</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">InterviewStatus</span><span class="o">.</span><span class="n">FAILED</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_500_INTERNAL_SERVER_ERROR</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;AI pipeline error: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">interview</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">interview</span></div>
+
+
+
+<div class="viewcode-block" id="get_next_question">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.get_next_question">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/</span><span class="si">{interview_id}</span><span class="s2">/next-question&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">QuestionResponse</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_next_question</span><span class="p">(</span>
+    <span class="n">interview_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the next interview question.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interview_id: UUID of the interview.</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The next question with its metadata.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        HTTPException: If no questions are available or all have been asked.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_get_user_interview</span><span class="p">(</span><span class="n">interview_id</span><span class="p">,</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">interview</span><span class="o">.</span><span class="n">questions</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Interview has not been started yet&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">questions</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">interview</span><span class="o">.</span><span class="n">questions</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">interview</span><span class="o">.</span><span class="n">current_question_index</span>
+
+    <span class="k">if</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;All questions have been asked&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">question</span> <span class="o">=</span> <span class="n">questions</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">interview</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">InterviewStatus</span><span class="o">.</span><span class="n">QUESTIONS_READY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+        <span class="n">interview</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">InterviewStatus</span><span class="o">.</span><span class="n">IN_PROGRESS</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;question_index&quot;</span><span class="p">:</span> <span class="n">idx</span><span class="p">,</span>
+        <span class="s2">&quot;question_text&quot;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question&quot;</span><span class="p">,</span> <span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question_text&quot;</span><span class="p">,</span> <span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))),</span>
+        <span class="s2">&quot;question_type&quot;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question_type&quot;</span><span class="p">,</span> <span class="s2">&quot;general&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;difficulty&quot;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;difficulty&quot;</span><span class="p">,</span> <span class="n">interview</span><span class="o">.</span><span class="n">difficulty_level</span><span class="p">),</span>
+        <span class="s2">&quot;total_questions&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="submit_answer">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.submit_answer">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/</span><span class="si">{interview_id}</span><span class="s2">/submit-answer&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">AnswerEvaluation</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">submit_answer</span><span class="p">(</span>
+    <span class="n">interview_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">SubmitAnswer</span><span class="p">,</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Submit and evaluate a candidate&#39;s answer.</span>
+
+<span class="sd">    Appends the Q/A pair to the transcript and runs real-time evaluation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interview_id: UUID of the interview.</span>
+<span class="sd">        data: The answer payload.</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Evaluation score, feedback, and optional follow-up.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_get_user_interview</span><span class="p">(</span><span class="n">interview_id</span><span class="p">,</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+    <span class="n">questions</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">interview</span><span class="o">.</span><span class="n">questions</span> <span class="ow">or</span> <span class="s2">&quot;[]&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">question_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Invalid question index&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">question</span> <span class="o">=</span> <span class="n">questions</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">question_index</span><span class="p">]</span>
+
+    <span class="c1"># Update transcript</span>
+    <span class="n">transcript</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">interview</span><span class="o">.</span><span class="n">transcript</span> <span class="ow">or</span> <span class="s2">&quot;[]&quot;</span><span class="p">)</span>
+    <span class="n">transcript</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s2">&quot;question_index&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">question_index</span><span class="p">,</span>
+        <span class="s2">&quot;question&quot;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question&quot;</span><span class="p">,</span> <span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question_text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)),</span>
+        <span class="s2">&quot;answer&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">answer_text</span><span class="p">,</span>
+        <span class="s2">&quot;time_taken&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">time_taken_seconds</span><span class="p">,</span>
+        <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">warnings</span><span class="p">,</span>
+    <span class="p">})</span>
+    <span class="n">interview</span><span class="o">.</span><span class="n">transcript</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">transcript</span><span class="p">)</span>
+    <span class="n">interview</span><span class="o">.</span><span class="n">current_question_index</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">question_index</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">agents.interviewer_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_single_answer</span>
+
+        <span class="n">evaluation</span> <span class="o">=</span> <span class="k">await</span> <span class="n">evaluate_single_answer</span><span class="p">(</span>
+            <span class="n">question_text</span><span class="o">=</span><span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question&quot;</span><span class="p">,</span> <span class="n">question</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question_text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)),</span>
+            <span class="n">answer_text</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">answer_text</span><span class="p">,</span>
+            <span class="n">jd_context</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">jd_text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">personality_mode</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">personality_mode</span><span class="p">,</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># --- ADAPTIVE QUESTIONING LOGIC ---</span>
+        <span class="c1"># If the score is less than 8 and the AI generated a follow-up, </span>
+        <span class="c1"># inject it as the immediate next question in the overall queue.</span>
+        <span class="k">if</span> <span class="n">evaluation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">8.0</span> <span class="ow">and</span> <span class="n">evaluation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;follow_up&quot;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adaptive logic triggered: Injecting follow-up question.&quot;</span><span class="p">)</span>
+            <span class="n">follow_up_q</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;question&quot;</span><span class="p">:</span> <span class="n">evaluation</span><span class="p">[</span><span class="s2">&quot;follow_up&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;follow_up&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;difficulty&quot;</span><span class="p">:</span> <span class="s2">&quot;adaptive&quot;</span>
+            <span class="p">}</span>
+            <span class="c1"># Insert the follow-up right after the current question</span>
+            <span class="n">questions</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">question_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">follow_up_q</span><span class="p">)</span>
+            
+            <span class="c1"># Re-index all questions</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">questions</span><span class="p">):</span>
+                <span class="n">q</span><span class="p">[</span><span class="s2">&quot;question_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+                
+            <span class="n">interview</span><span class="o">.</span><span class="n">questions</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Agent evaluation failed, using fallback: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+        <span class="n">evaluation</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span>
+            <span class="s2">&quot;feedback&quot;</span><span class="p">:</span> <span class="s2">&quot;Answer recorded successfully.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;follow_up&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">interview</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;question_index&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">question_index</span><span class="p">,</span>
+        <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">evaluation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">),</span>
+        <span class="s2">&quot;feedback&quot;</span><span class="p">:</span> <span class="n">evaluation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;feedback&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;follow_up&quot;</span><span class="p">:</span> <span class="n">evaluation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;follow_up&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;encouragement&quot;</span><span class="p">:</span> <span class="n">evaluation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;encouragement&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="complete_interview">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.complete_interview">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/</span><span class="si">{interview_id}</span><span class="s2">/complete&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">ResultResponse</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">complete_interview</span><span class="p">(</span>
+    <span class="n">interview_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Result</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Complete an interview and generate final scores and feedback.</span>
+
+<span class="sd">    Runs the scoring and feedback pipelines, then stores the result.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interview_id: UUID of the interview.</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The populated result record.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_get_user_interview</span><span class="p">(</span><span class="n">interview_id</span><span class="p">,</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">agents.orchestrator</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_scoring_pipeline</span>
+
+        <span class="n">pipeline_result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">run_scoring_pipeline</span><span class="p">(</span>
+            <span class="n">transcript</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">interview</span><span class="o">.</span><span class="n">transcript</span> <span class="ow">or</span> <span class="s2">&quot;[]&quot;</span><span class="p">),</span>
+            <span class="n">questions</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">interview</span><span class="o">.</span><span class="n">questions</span> <span class="ow">or</span> <span class="s2">&quot;[]&quot;</span><span class="p">),</span>
+            <span class="n">jd_text</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">jd_text</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">resume_analysis</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">interview</span><span class="o">.</span><span class="n">resume_analysis</span> <span class="ow">or</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Scoring pipeline failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+        <span class="n">pipeline_result</span> <span class="o">=</span> <span class="n">_fallback_scoring</span><span class="p">()</span>
+
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">pipeline_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scores&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">feedback_data</span> <span class="o">=</span> <span class="n">pipeline_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;feedback&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">questions_list</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">interview</span><span class="o">.</span><span class="n">questions</span> <span class="ow">or</span> <span class="s2">&quot;[]&quot;</span><span class="p">)</span>
+    <span class="n">transcript_list</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">interview</span><span class="o">.</span><span class="n">transcript</span> <span class="ow">or</span> <span class="s2">&quot;[]&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Aggregate all warnings from the transcript</span>
+    <span class="n">all_warnings</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">turn</span> <span class="ow">in</span> <span class="n">transcript_list</span><span class="p">:</span>
+        <span class="n">warnings</span> <span class="o">=</span> <span class="n">turn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;warnings&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="n">warnings</span><span class="p">:</span>
+            <span class="n">all_warnings</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">warnings</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">Result</span><span class="p">(</span>
+        <span class="n">interview_id</span><span class="o">=</span><span class="n">interview</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">overall_score</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overall&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="n">technical_score</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;technical&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="n">behavioral_score</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;behavioral&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="n">communication_score</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;communication&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="n">problem_solving_score</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;problem_solving&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="n">score_breakdown</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;breakdown&quot;</span><span class="p">,</span> <span class="p">{})),</span>
+        <span class="n">feedback</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">feedback_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)),</span>
+        <span class="n">skill_gaps</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">feedback_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skill_gaps&quot;</span><span class="p">,</span> <span class="p">[])),</span>
+        <span class="n">improvement_plan</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">feedback_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;improvement_plan&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)),</span>
+        <span class="n">strengths</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;strengths&quot;</span><span class="p">,</span> <span class="p">[])),</span>
+        <span class="n">weaknesses</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weaknesses&quot;</span><span class="p">,</span> <span class="p">[])),</span>
+        <span class="n">cheating_flags</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">all_warnings</span><span class="p">))),</span>
+        <span class="n">total_questions</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">questions_list</span><span class="p">),</span>
+        <span class="n">questions_answered</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">transcript_list</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">db</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="n">interview</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">InterviewStatus</span><span class="o">.</span><span class="n">SCORED</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="get_results">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.get_results">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/</span><span class="si">{interview_id}</span><span class="s2">/results&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">ResultResponse</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_results</span><span class="p">(</span>
+    <span class="n">interview_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Result</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the final results for a completed interview.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interview_id: UUID of the interview.</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The result record.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        HTTPException: If results are not yet available.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_get_user_interview</span><span class="p">(</span><span class="n">interview_id</span><span class="p">,</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+
+    <span class="n">result_query</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="n">select</span><span class="p">(</span><span class="n">Result</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Result</span><span class="o">.</span><span class="n">interview_id</span> <span class="o">==</span> <span class="n">interview</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">result_query</span><span class="o">.</span><span class="n">scalar_one_or_none</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_404_NOT_FOUND</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Results not available yet. Complete the interview first.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="list_interviews">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.list_interviews">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">response_model</span><span class="o">=</span><span class="n">InterviewListResponse</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_interviews</span><span class="p">(</span>
+    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;List the current user&#39;s interview sessions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        skip: Number of records to skip (pagination offset).</span>
+<span class="sd">        limit: Maximum number of records to return.</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with ``interviews`` list and ``total`` count.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">count_result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="n">select</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
+        <span class="o">.</span><span class="n">select_from</span><span class="p">(</span><span class="n">Interview</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Interview</span><span class="o">.</span><span class="n">user_id</span> <span class="o">==</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">count_result</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span> <span class="ow">or</span> <span class="mi">0</span>
+
+    <span class="n">query</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">select</span><span class="p">(</span><span class="n">Interview</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Interview</span><span class="o">.</span><span class="n">user_id</span> <span class="o">==</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Interview</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span>
+        <span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">skip</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">interviews_result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+    <span class="n">interviews</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">interviews_result</span><span class="o">.</span><span class="n">scalars</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;interviews&quot;</span><span class="p">:</span> <span class="n">interviews</span><span class="p">,</span> <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="n">total</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="delete_interview">
+<a class="viewcode-back" href="../../../api.html#app.api.interviews.delete_interview">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="s2">&quot;/</span><span class="si">{interview_id}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_204_NO_CONTENT</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">delete_interview</span><span class="p">(</span>
+    <span class="n">interview_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">current_user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_current_user</span><span class="p">),</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">get_db</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete an interview session.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interview_id: UUID of the interview.</span>
+<span class="sd">        current_user: The authenticated user.</span>
+<span class="sd">        db: Async database session.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_get_user_interview</span><span class="p">(</span><span class="n">interview_id</span><span class="p">,</span> <span class="n">current_user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">interview</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<span class="c1"># ── Private Helpers ─────────────────────────────────────────────</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_get_user_interview</span><span class="p">(</span>
+    <span class="n">interview_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">user_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Interview</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetch an interview and verify ownership.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        interview_id: UUID of the interview.</span>
+<span class="sd">        user_id: UUID of the requesting user.</span>
+<span class="sd">        db: Async database session.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The interview instance.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        HTTPException: If not found or not owned by the user.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="n">select</span><span class="p">(</span><span class="n">Interview</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Interview</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">interview_id</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">interview</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalar_one_or_none</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">interview</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_404_NOT_FOUND</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Interview not found&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">interview</span><span class="o">.</span><span class="n">user_id</span> <span class="o">!=</span> <span class="n">user_id</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+            <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_403_FORBIDDEN</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Not authorised to access this interview&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">interview</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fallback_scoring</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a default scoring result when the AI pipeline fails.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;overall&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+            <span class="s2">&quot;technical&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+            <span class="s2">&quot;behavioral&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+            <span class="s2">&quot;communication&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+            <span class="s2">&quot;problem_solving&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+            <span class="s2">&quot;strengths&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Completed the interview&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;weaknesses&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Scores generated from fallback — AI was unavailable&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;breakdown&quot;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;feedback&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="s2">&quot;Interview completed. Detailed AI feedback was unavailable.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;skill_gaps&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;improvement_plan&quot;</span><span class="p">:</span> <span class="s2">&quot;Retry the interview to receive AI-generated feedback.&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Antigravity.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
