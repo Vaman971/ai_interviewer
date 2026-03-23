@@ -1,7 +1,7 @@
 """Authentication API routes: register, login, and profile retrieval."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.database import get_db
@@ -50,10 +50,16 @@ async def register(
             detail="Email already registered",
         )
 
+    user_count_q = await db.execute(select(func.count()).select_from(User))
+    user_count = user_count_q.scalar() or 0
+    is_first_user = (user_count == 0)
+
     user = User(
         email=data.email,
         hashed_password=hash_password(data.password),
         full_name=data.full_name,
+        is_admin=is_first_user,
+        is_super_admin=is_first_user,
     )
     db.add(user)
     await db.flush()

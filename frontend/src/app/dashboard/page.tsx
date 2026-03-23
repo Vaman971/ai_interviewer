@@ -14,6 +14,7 @@ import {
   Loader2,
   ChevronRight,
   Trash2,
+  Shield,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores";
 import { interviewApi, type Interview } from "@/lib/api";
@@ -114,6 +115,11 @@ export default function DashboardPage() {
           <span style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)" }}>AI Interviewer</span>
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          {user?.is_admin && (
+            <Link href="/admin" className="btn-outline" style={{ padding: "6px 16px", fontSize: "0.85rem", textDecoration: "none", color: "var(--text-primary)" }}>
+              <Shield size={14} style={{ marginRight: "6px" }} /> Admin
+            </Link>
+          )}
           <Link href="/dashboard/analytics" className="btn-outline" style={{ padding: "6px 16px", fontSize: "0.85rem", textDecoration: "none", color: "var(--text-primary)" }}>
             <BarChart3 size={14} style={{ marginRight: "6px" }} /> Analytics
           </Link>
