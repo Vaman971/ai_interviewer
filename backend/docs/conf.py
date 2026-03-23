@@ -12,8 +12,8 @@ sys.path.insert(0, os.path.abspath('..'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'AI Interviewer Backend'
-copyright = '2026, Antigravity'
-author = 'Antigravity'
+copyright = '2026, Aman'
+author = 'Aman'
 
 version = '1.0.0'
 release = '1.0.0'
