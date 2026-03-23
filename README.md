@@ -95,9 +95,10 @@ Visit `http://localhost:3000` to access the application.
 ---
 
 ## 🐳 Docker Deployment (Phase 6)
-The project includes production-ready Dockerfiles for both frontend and backend, alongside Kubernetes manifests for EKS deployments, and Terraform scripts (`/infra`) for rapid AWS infrastructure provisioning. 
+The project includes a production-ready `docker-compose.yml` that seamlessly orchestrates the Next.js standalone server, the FastAPI python backend, and a Redis caching layer.
 
 ```bash
-docker build -f infra/docker/Dockerfile.backend -t core-api ./backend
-docker build -f infra/docker/Dockerfile.frontend -t core-ui ./frontend
+docker compose up --build -d
 ```
+
+Once built, the AI Interviewer platform is instantly available at **http://localhost:3000** with the API running on **http://localhost:8000**. Kubernetes manifests (`/infra/k8s/`) are also provided for EKS/GKE cluster deployments.
