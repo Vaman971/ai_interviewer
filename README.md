@@ -94,7 +94,7 @@ Visit `http://localhost:3000` to access the application.
 
 ---
 
-## 🐳 Docker Deployment (Phase 6)
+## 🐳 Docker Deployment
 The project includes a production-ready `docker-compose.yml` that seamlessly orchestrates the Next.js standalone server, the FastAPI python backend, and a Redis caching layer.
 
 ```bash

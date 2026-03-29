@@ -51,6 +51,8 @@ class UserResponse(BaseModel):
         email: Email address.
         full_name: Display name, if set.
         is_active: Whether the account is enabled.
+        is_admin: Admin status.
+        is_super_admin: Super admin status.
         created_at: Account creation timestamp.
     """
 
@@ -58,6 +60,8 @@ class UserResponse(BaseModel):
     email: str
     full_name: str | None
     is_active: bool
+    is_admin: bool
+    is_super_admin: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}

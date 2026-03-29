@@ -7,7 +7,13 @@ import { create } from "zustand";
 // ── Auth Store ───────────────────────────────────────────────────
 interface AuthState {
   token: string | null;
-  user: { id: string; email: string; full_name: string | null } | null;
+  user: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    is_admin?: boolean;
+    is_super_admin?: boolean;
+  } | null;
   isAuthenticated: boolean;
   setAuth: (token: string, user: AuthState["user"]) => void;
   logout: () => void;

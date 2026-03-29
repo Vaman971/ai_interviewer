@@ -16,6 +16,7 @@ from backend.app.api.auth import router as auth_router
 from backend.app.api.interviews import router as interviews_router
 from backend.app.api.media import router as media_router
 from backend.app.api.code_execution import router as code_execution_router
+from backend.app.api.admin import router as admin_router
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -65,6 +66,7 @@ app.include_router(auth_router)
 app.include_router(interviews_router)
 app.include_router(media_router)
 app.include_router(code_execution_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")

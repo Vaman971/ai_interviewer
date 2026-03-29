@@ -15,6 +15,9 @@ services:
       - DATABASE_URL=sqlite+aiosqlite:///./ai_interviewer.db
     depends_on:
       - redis
+    volumes:
+      - db_data:/app
+      - ./uploads:/app/uploads
 
   # ── Frontend (Next.js) ──────────────────────────────────────────
   frontend:
@@ -48,4 +51,5 @@ services:
 
 volumes:
   redis_data:
+  db_data:
   # postgres_data:

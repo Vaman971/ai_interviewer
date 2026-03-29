@@ -67,6 +67,8 @@ export const authApi = {
       email: string;
       full_name: string | null;
       is_active: boolean;
+      is_admin: boolean;
+      is_super_admin: boolean;
       created_at: string;
     }>("/api/auth/me"),
 };
@@ -209,4 +211,34 @@ export const executionApi = {
       method: "POST",
       body: JSON.stringify({ language, code, version }),
     }),
+};
+
+// ── Admin ────────────────────────────────────────────────────────
+export const adminApi = {
+  getMetrics: () =>
+    request<{
+      total_users: number;
+      total_interviews: number;
+      average_score: number;
+    }>("/api/admin/metrics"),
+
+  getUsers: (skip = 0, limit = 50) =>
+    request<{
+      users: {
+        id: string;
+        email: string;
+        full_name: string | null;
+        is_active: boolean;
+        is_admin: boolean;
+        is_super_admin: boolean;
+        created_at: string;
+      }[];
+      total: number;
+    }>(`/api/admin/users?skip=${skip}&limit=${limit}`),
+
+  modifyRole: (targetUserId: string, makeAdmin: boolean) =>
+    request<{ message: string; is_admin: boolean }>(
+      `/api/admin/users/${targetUserId}/role?make_admin=${makeAdmin}`,
+      { method: "PUT" }
+    ),
 };
