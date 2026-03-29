@@ -5,7 +5,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 2
+  replicas: 1   # 1 replica during testing to save money
   selector:
     matchLabels:
       app: backend
@@ -16,28 +16,16 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ghcr.io/username/ai-interviewer-backend:latest
+        # ── Image URL is filled in by the deploy.ps1 script after terraform apply ──
+        image: PLACEHOLDER_ECR_BACKEND_URL:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: db-credentials
-              key: url
-        - name: REDIS_URL
-          value: "redis://redis-service:6379/0"
-        - name: JWT_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: jwt-secret
-        - name: OPENAI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: openai-key
+        envFrom:
+        - configMapRef:
+            name: ai-interviewer-config
+        - secretRef:
+            name: ai-interviewer-secrets
         resources:
           requests:
             memory: "256Mi"
@@ -45,6 +33,18 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
 ---
 apiVersion: v1
 kind: Service
@@ -55,6 +55,6 @@ spec:
     app: backend
   ports:
     - protocol: TCP
-      port: 8000
+      port: 80
       targetPort: 8000
   type: ClusterIP

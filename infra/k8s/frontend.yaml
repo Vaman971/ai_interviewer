@@ -5,7 +5,7 @@ metadata:
   labels:
     app: frontend
 spec:
-  replicas: 2
+  replicas: 1   # 1 replica during testing to save money
   selector:
     matchLabels:
       app: frontend
@@ -16,13 +16,17 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/username/ai-interviewer-frontend:latest
+        # ── Image URL is filled in by the deploy.ps1 script after terraform apply ──
+        image: PLACEHOLDER_ECR_FRONTEND_URL:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
         env:
         - name: NEXT_PUBLIC_API_URL
-          value: "https://api.ai-interviewer.com"
+          valueFrom:
+            configMapKeyRef:
+              name: ai-interviewer-config
+              key: NEXT_PUBLIC_API_URL
         resources:
           requests:
             memory: "128Mi"
