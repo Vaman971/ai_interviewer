@@ -39,6 +39,15 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Create ECR repositories if they don't exist
+      env:
+        AWS_REGION: us-east-1
+      run: |
+        aws ecr describe-repositories --repository-names ai-interviewer-backend --region $AWS_REGION 2>/dev/null || \
+          aws ecr create-repository --repository-name ai-interviewer-backend --region $AWS_REGION
+        aws ecr describe-repositories --repository-names ai-interviewer-frontend --region $AWS_REGION 2>/dev/null || \
+          aws ecr create-repository --repository-name ai-interviewer-frontend --region $AWS_REGION
+
     - name: Build, tag, and push backend image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
