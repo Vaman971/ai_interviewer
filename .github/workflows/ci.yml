@@ -16,11 +16,13 @@ jobs:
       with:
         python-version: "3.11"
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
     - name: Install dependencies
       run: uv pip install --system -e .
     - name: Run tests
-      run: pytest backend/tests/ -v
+      run: python -m pytest backend/tests/ -v
 
   build-push-images:
     needs: test-backend
