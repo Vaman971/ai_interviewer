@@ -54,7 +54,7 @@ module "eks" {
   version = "19.16.0"
 
   cluster_name    = "ai-interviewer-eks"
-  cluster_version = "1.28"
+  cluster_version = "1.31"
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
