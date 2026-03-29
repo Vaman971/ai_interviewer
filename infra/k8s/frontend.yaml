@@ -22,11 +22,10 @@ spec:
         ports:
         - containerPort: 3000
         env:
+        # NEXT_PUBLIC_API_URL is read by next.config.ts at SERVER startup (not build time)
+        # so it can be injected at runtime — no image rebuild needed when URL changes
         - name: NEXT_PUBLIC_API_URL
-          valueFrom:
-            configMapKeyRef:
-              name: ai-interviewer-config
-              key: NEXT_PUBLIC_API_URL
+          value: "http://backend-service:80"
         resources:
           requests:
             memory: "128Mi"
