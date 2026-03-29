@@ -77,7 +77,8 @@ if (-not $DB_PASSWORD) {
     $DB_PASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($DB_PASSWORD))
 }
 
-$DATABASE_URL = "postgresql+asyncpg://$($ENV_VARS['db_username'] ?? 'ai_interviewer_admin'):${DB_PASSWORD}@${RDS_ENDPOINT}:5432/ai_interviewer"
+$db_user = if ($ENV_VARS["db_username"]) { $ENV_VARS["db_username"] } else { "ai_interviewer_admin" }
+$DATABASE_URL = "postgresql+asyncpg://${db_user}:${DB_PASSWORD}@${RDS_ENDPOINT}:5432/ai_interviewer"
 $REDIS_URL    = "redis://${REDIS_ENDPOINT}:6379/0"
 $ALB_URL      = "http://$(kubectl get ingress ai-interviewer-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>$null)"
 
@@ -117,12 +118,13 @@ kubectl apply -f "$ROOT\infra\k8s\ingress.yaml"
 # ── STEP 7: Wait and print access URL ────────────────────────────────────────
 Write-Host "`n[7/7] Waiting for LoadBalancer to become ready (up to 3 mins)..." -ForegroundColor Cyan
 $TRIES = 0
-do {
+$ALB_HOST = ""
+while (-not $ALB_HOST -and $TRIES -lt 12) {
     Start-Sleep -Seconds 15
     $TRIES++
     $ALB_HOST = kubectl get ingress ai-interviewer-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>$null
-    Write-Host "  Attempt $TRIES/12 — ALB: $ALB_HOST"
-} while (-not $ALB_HOST -and $TRIES -lt 12)
+    Write-Host "  Attempt $TRIES/12 - ALB: $ALB_HOST"
+}
 
 Write-Host ""
 if ($ALB_HOST) {
@@ -133,7 +135,7 @@ if ($ALB_HOST) {
     Write-Host "  API Docs : http://$ALB_HOST/api/docs" -ForegroundColor Yellow
     Write-Host "============================================================" -ForegroundColor Green
 } else {
-    Write-Host "  ALB not ready yet — run: kubectl get ingress" -ForegroundColor Yellow
+    Write-Host "  ALB not ready yet -- run: kubectl get ingress" -ForegroundColor Yellow
 }
 
 Write-Host ""
