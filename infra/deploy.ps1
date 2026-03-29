@@ -38,7 +38,8 @@ Write-Host "  EKS Cluster:  $CLUSTER_NAME" -ForegroundColor Green
 
 # ── STEP 2: Authenticate Docker to ECR ───────────────────────────────────────
 Write-Host "`n[2/7] Logging Docker into ECR..." -ForegroundColor Cyan
-aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+$ECR_TOKEN = (aws ecr get-login-password --region $AWS_REGION)
+docker login --username AWS --password $ECR_TOKEN "$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 if ($LASTEXITCODE -ne 0) { Write-Error "ECR login failed"; exit 1 }
 
 # ── STEP 3: Build and push Docker images ─────────────────────────────────────
