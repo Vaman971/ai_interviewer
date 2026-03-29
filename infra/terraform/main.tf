@@ -75,25 +75,13 @@ module "eks" {
   }
 }
 
-# ── 3. ECR Repositories (to store Docker images) ─────────────────────
-resource "aws_ecr_repository" "backend" {
-  name                 = "ai-interviewer-backend"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true  # Allows destroy even when images exist
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+# ── 3. ECR Repositories (already created by CI pipeline — read-only) ─
+data "aws_ecr_repository" "backend" {
+  name = "ai-interviewer-backend"
 }
 
-resource "aws_ecr_repository" "frontend" {
-  name                 = "ai-interviewer-frontend"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+data "aws_ecr_repository" "frontend" {
+  name = "ai-interviewer-frontend"
 }
 
 # ── 4. Security Groups ───────────────────────────────────────────────
