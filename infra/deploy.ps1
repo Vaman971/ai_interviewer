@@ -79,32 +79,31 @@ if (-not $DB_PASSWORD) {
 }
 
 $db_user = if ($ENV_VARS["db_username"]) { $ENV_VARS["db_username"] } else { "ai_interviewer_admin" }
-$DATABASE_URL = "postgresql+asyncpg://${db_user}:${DB_PASSWORD}@${RDS_ENDPOINT}:5432/ai_interviewer"
+$DATABASE_URL = "postgresql+asyncpg://${db_user}:${DB_PASSWORD}@${RDS_ENDPOINT}/ai_interviewer"
 $REDIS_URL    = "redis://${REDIS_ENDPOINT}:6379/0"
-$ALB_URL      = "http://$(kubectl get ingress ai-interviewer-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>$null)"
 
 # Create ConfigMap (non-sensitive values)
 kubectl create configmap ai-interviewer-config `
-    --from-literal=APP_ENV=production `
-    --from-literal=DEBUG=false `
-    --from-literal=PYTHONPATH=/app `
-    --from-literal=LLM_BASE_URL=$($ENV_VARS["LLM_BASE_URL"]) `
-    --from-literal=OPENAI_MODEL=$($ENV_VARS["OPENAI_MODEL"]) `
-    --from-literal=UPLOAD_DIR=/app/uploads `
-    --from-literal=JWT_ALGORITHM=HS256 `
-    --from-literal=JWT_EXPIRATION_MINUTES=1440 `
-    --from-literal=NEXT_PUBLIC_API_URL="$ALB_URL" `
+    --from-literal=APP_ENV="production" `
+    --from-literal=DEBUG="false" `
+    --from-literal=PYTHONPATH="/app" `
+    --from-literal=LLM_BASE_URL="$($ENV_VARS["LLM_BASE_URL"])" `
+    --from-literal=OPENAI_MODEL="$($ENV_VARS["OPENAI_MODEL"])" `
+    --from-literal=UPLOAD_DIR="/app/uploads" `
+    --from-literal=JWT_ALGORITHM="HS256" `
+    --from-literal=JWT_EXPIRATION_MINUTES="1440" `
+    --from-literal=NEXT_PUBLIC_API_URL="http://backend-service:80" `
     --dry-run=client -o yaml | kubectl apply -f -
 
 # Create Secret (sensitive values)
 kubectl create secret generic ai-interviewer-secrets `
-    --from-literal=SECRET_KEY=$($ENV_VARS["SECRET_KEY"]) `
-    --from-literal=JWT_SECRET=$($ENV_VARS["JWT_SECRET"]) `
-    --from-literal=DATABASE_URL=$DATABASE_URL `
-    --from-literal=REDIS_URL=$REDIS_URL `
-    --from-literal=OPENAI_API_KEY=$($ENV_VARS["OPENAI_API_KEY"]) `
-    --from-literal=DEEPGRAM_API_KEY=$($ENV_VARS["DEEPGRAM_API_KEY"]) `
-    --from-literal=TAVUS_API_KEY=$($ENV_VARS["TAVUS_API_KEY"]) `
+    --from-literal=SECRET_KEY="$($ENV_VARS['SECRET_KEY'])" `
+    --from-literal=JWT_SECRET="$($ENV_VARS['JWT_SECRET'])" `
+    --from-literal=DATABASE_URL="$DATABASE_URL" `
+    --from-literal=REDIS_URL="$REDIS_URL" `
+    --from-literal=OPENAI_API_KEY="$($ENV_VARS['OPENAI_API_KEY'])" `
+    --from-literal=DEEPGRAM_API_KEY="$($ENV_VARS['DEEPGRAM_API_KEY'])" `
+    --from-literal=TAVUS_API_KEY="$($ENV_VARS['TAVUS_API_KEY'])" `
     --dry-run=client -o yaml | kubectl apply -f -
 
 # ── STEP 6: Patch image URLs and apply K8s manifests ─────────────────────────
@@ -113,30 +112,48 @@ Write-Host "`n[6/7] Deploying to Kubernetes..." -ForegroundColor Cyan
 # Replace placeholder image URLs with real ECR URLs
 (Get-Content "$ROOT\infra\k8s\backend.yaml")  -replace "PLACEHOLDER_ECR_BACKEND_URL",  $ECR_BACKEND  | kubectl apply -f -
 (Get-Content "$ROOT\infra\k8s\frontend.yaml") -replace "PLACEHOLDER_ECR_FRONTEND_URL", $ECR_FRONTEND | kubectl apply -f -
+
+# Expose services as LoadBalancer (no ALB controller needed)
+kubectl expose deployment ai-interviewer-frontend `
+    --name=frontend-service --port=80 --target-port=3000 --type=LoadBalancer `
+    --dry-run=client -o yaml | kubectl apply -f - 2>$null
+
+kubectl expose deployment ai-interviewer-backend `
+    --name=backend-service --port=80 --target-port=8000 --type=LoadBalancer `
+    --dry-run=client -o yaml | kubectl apply -f - 2>$null
+
 kubectl apply -f "$ROOT\infra\k8s\database.yaml"
-kubectl apply -f "$ROOT\infra\k8s\ingress.yaml"
+
+# Wait for backend pod to be ready and initialize the database schema
+Write-Host "  Waiting for backend pod to initialize the database..." -ForegroundColor Cyan
+kubectl wait --for=condition=Ready pod -l app=backend --timeout=90s
+$POD_NAME = kubectl get pods -l app=backend -o jsonpath="{.items[0].metadata.name}"
+kubectl exec $POD_NAME -- python -c "import asyncio; import backend.app.main; from backend.app.db.database import create_tables; asyncio.run(create_tables())"
+Write-Host "  Database initialized successfully." -ForegroundColor Green
 
 # ── STEP 7: Wait and print access URL ────────────────────────────────────────
-Write-Host "`n[7/7] Waiting for LoadBalancer to become ready (up to 3 mins)..." -ForegroundColor Cyan
+Write-Host "`n[7/7] Waiting for LoadBalancers to become ready (up to 3 mins)..." -ForegroundColor Cyan
 $TRIES = 0
-$ALB_HOST = ""
-while (-not $ALB_HOST -and $TRIES -lt 12) {
+$FE_HOST = ""
+$BE_HOST = ""
+while ((-not $FE_HOST -or -not $BE_HOST) -and $TRIES -lt 12) {
     Start-Sleep -Seconds 15
     $TRIES++
-    $ALB_HOST = kubectl get ingress ai-interviewer-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>$null
-    Write-Host "  Attempt $TRIES/12 - ALB: $ALB_HOST"
+    $FE_HOST = kubectl get svc frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>$null
+    $BE_HOST = kubectl get svc backend-service  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>$null
+    Write-Host "  Attempt $TRIES/12 - Frontend: $FE_HOST | Backend: $BE_HOST"
 }
 
 Write-Host ""
-if ($ALB_HOST) {
+if ($FE_HOST) {
     Write-Host "============================================================" -ForegroundColor Green
     Write-Host "  DEPLOYMENT COMPLETE!" -ForegroundColor Green
-    Write-Host "  App URL  : http://$ALB_HOST" -ForegroundColor Yellow
-    Write-Host "  API URL  : http://$ALB_HOST/api" -ForegroundColor Yellow
-    Write-Host "  API Docs : http://$ALB_HOST/api/docs" -ForegroundColor Yellow
+    Write-Host "  Frontend : http://$FE_HOST" -ForegroundColor Yellow
+    Write-Host "  API URL  : http://$BE_HOST" -ForegroundColor Yellow
+    Write-Host "  API Docs : http://$BE_HOST/docs" -ForegroundColor Yellow
     Write-Host "============================================================" -ForegroundColor Green
 } else {
-    Write-Host "  ALB not ready yet -- run: kubectl get ingress" -ForegroundColor Yellow
+    Write-Host "  LoadBalancers not ready yet -- run: kubectl get svc" -ForegroundColor Yellow
 }
 
 Write-Host ""

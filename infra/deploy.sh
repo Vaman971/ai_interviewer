@@ -87,7 +87,7 @@ if [[ -z "$DB_PASSWORD" ]]; then
 fi
 
 DB_USER="${ENV_VARS[db_username]:-ai_interviewer_admin}"
-DATABASE_URL="postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${RDS_ENDPOINT}:5432/ai_interviewer"
+DATABASE_URL="postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${RDS_ENDPOINT}/ai_interviewer"
 REDIS_URL="redis://${REDIS_ENDPOINT}:6379/0"
 
 # Create ConfigMap (non-sensitive values)
@@ -130,6 +130,13 @@ kubectl expose deployment ai-interviewer-backend \
     --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
 
 kubectl apply -f "$ROOT/infra/k8s/database.yaml"
+
+# Wait for backend pod to be ready and initialize the database schema
+echo -e "\n${CYAN}  Waiting for backend pod to initialize the database...${NC}"
+kubectl wait --for=condition=Ready pod -l app=backend --timeout=90s
+POD_NAME=$(kubectl get pods -l app=backend -o jsonpath="{.items[0].metadata.name}")
+kubectl exec "$POD_NAME" -- python -c "import asyncio; import backend.app.main; from backend.app.db.database import create_tables; asyncio.run(create_tables())"
+echo -e "${GREEN}  Database initialized successfully.${NC}"
 
 # ── STEP 7: Wait and print access URLs ───────────────────────────────────────
 echo -e "\n${CYAN}[7/7] Waiting for LoadBalancers to become ready (up to 3 min)...${NC}"
