@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   // Browser only ever talks to the frontend host — no CORS, no localhost issues.
   // BACKEND_URL is set at runtime via K8s ConfigMap (not baked at build time).
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://backend-service:80";
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     return [
       {
         source: "/api/:path*",
