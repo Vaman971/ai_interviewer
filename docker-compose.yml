@@ -27,7 +27,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      # Points to the backend container by its docker-compose service name.
+      # Read at server startup by next.config.ts rewrites — NOT baked at build time.
+      - NEXT_PUBLIC_API_URL=http://backend:8000
 
   # ── Redis ───────────────────────────────────────────────────────
   redis:
