@@ -3,7 +3,9 @@
  * Wraps fetch with auth headers and error handling.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Empty string = relative URLs (/api/...) — proxied server-side by next.config.ts rewrites.
+// Do NOT use NEXT_PUBLIC_API_URL here: it gets baked at build time (wrong value in CI).
+const API_URL = "";
 
 class ApiError extends Error {
   status: number;
