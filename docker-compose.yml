@@ -13,6 +13,7 @@ services:
     environment:
       - PYTHONPATH=/app
       - DATABASE_URL=sqlite+aiosqlite:///./ai_interviewer.db
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       - redis
     volumes:

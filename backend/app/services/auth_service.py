@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.config import get_settings
 from backend.app.db.database import get_db
+from backend.app.db.redis import get_redis
 from backend.app.models.user import User
 
 settings = get_settings()
@@ -60,14 +61,38 @@ def create_access_token(
     Returns:
         The encoded JWT string.
     """
+    import uuid
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.jwt_expiration_minutes)
     )
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "jti": str(uuid.uuid4())})
     return jwt.encode(
         to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm
     )
+
+
+async def revoke_token(token: str) -> None:
+    """Add a JWT to the Redis blocklist until it expires.
+
+    Args:
+        token: The raw JWT string to revoke.
+    """
+    try:
+        payload = jwt.decode(
+            token,
+            settings.jwt_secret,
+            algorithms=[settings.jwt_algorithm],
+        )
+        jti = payload.get("jti")
+        exp = payload.get("exp")
+        if jti and exp:
+            ttl = int(exp - datetime.now(timezone.utc).timestamp())
+            if ttl > 0:
+                r = await get_redis()
+                await r.setex(f"blocklist:{jti}", ttl, "1")
+    except JWTError:
+        pass  # Already invalid — nothing to revoke
 
 
 async def get_current_user(
@@ -76,7 +101,8 @@ async def get_current_user(
 ) -> User:
     """Extract and validate the current user from a JWT bearer token.
 
-    This is a FastAPI dependency injected into protected routes.
+    Checks the Redis blocklist before hitting the database, enabling
+    real logout / token revocation without DB writes.
 
     Args:
         token: The JWT bearer token from the ``Authorization`` header.
@@ -86,7 +112,7 @@ async def get_current_user(
         The authenticated ``User`` instance.
 
     Raises:
-        HTTPException: If the token is invalid or the user is not found.
+        HTTPException: If the token is invalid, revoked, or the user is not found.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -101,10 +127,26 @@ async def get_current_user(
             algorithms=[settings.jwt_algorithm],
         )
         user_id: str | None = payload.get("sub")
+        jti: str | None = payload.get("jti")
         if user_id is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
+
+    # ── Redis blocklist check (fast path — avoids DB hit for revoked tokens) ──
+    if jti:
+        try:
+            r = await get_redis()
+            if await r.exists(f"blocklist:{jti}"):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token has been revoked",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+        except HTTPException:
+            raise
+        except Exception:
+            pass  # Redis unavailable — fall through to DB auth
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
