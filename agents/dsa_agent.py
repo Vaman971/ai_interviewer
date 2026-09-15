@@ -73,29 +73,29 @@ class DSAAgent(BaseAgent):
             Dictionary with correctness, complexity analysis, and feedback.
         """
         eval_prompt = f"""
-Evaluate the following code solution for the problem: {problem.get('title', 'Unknown')}
+            Evaluate the following code solution for the problem: {problem.get('title', 'Unknown')}
 
-Problem: {problem.get('description', '')}
+            Problem: {problem.get('description', '')}
 
-Submitted Code ({language}):
-```{language}
-{code}
-```
+            Submitted Code ({language}):
+            ```{language}
+            {code}
+            ```
 
-Test Cases: {json.dumps(problem.get('test_cases', []))}
+            Test Cases: {json.dumps(problem.get('test_cases', []))}
 
-Evaluate and return JSON:
-{{
-    "is_correct": true/false,
-    "test_results": [{{"input": "...", "expected": "...", "actual": "...", "passed": true/false}}],
-    "time_complexity": "estimated time complexity",
-    "space_complexity": "estimated space complexity",
-    "code_quality": "assessment of code quality, style, and readability",
-    "score": <0-10>,
-    "feedback": "detailed feedback",
-    "suggestions": ["improvement suggestions"]
-}}
-"""
+            Evaluate and return JSON:
+            {{
+                "is_correct": true/false,
+                "test_results": [{{"input": "...", "expected": "...", "actual": "...", "passed": true/false}}],
+                "time_complexity": "estimated time complexity",
+                "space_complexity": "estimated space complexity",
+                "code_quality": "assessment of code quality, style, and readability",
+                "score": <0-10>,
+                "feedback": "detailed feedback",
+                "suggestions": ["improvement suggestions"]
+            }}
+        """
         response = await self.call_llm(
             eval_prompt,
             system_message="You are a code evaluator. Analyze code correctness and quality. Always respond with valid JSON."
