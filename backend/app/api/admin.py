@@ -7,6 +7,7 @@ from typing import Any, List
 import json
 
 from backend.app.db.database import get_db
+from backend.app.db.redis import get_redis
 from backend.app.models.user import User
 from backend.app.models.interview import Interview
 from backend.app.models.result import Result
@@ -43,6 +44,17 @@ async def get_platform_metrics(
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve platform-wide statistics for the admin dashboard."""
+    METRICS_CACHE_KEY = "admin:metrics"
+    METRICS_TTL = 60  # seconds
+
+    try:
+        r = await get_redis()
+        cached = await r.get(METRICS_CACHE_KEY)
+        if cached:
+            return json.loads(cached)
+    except Exception:
+        r = None
+
     # Count total users
     user_count = (await db.execute(select(func.count(User.id)))).scalar() or 0
     
@@ -53,11 +65,19 @@ async def get_platform_metrics(
     avg_score_res = await db.execute(select(func.avg(Result.overall_score)))
     overall_avg = avg_score_res.scalar() or 0.0
 
-    return {
+    metrics = {
         "total_users": user_count,
         "total_interviews": interview_count,
         "average_score": round(overall_avg, 2)
     }
+
+    if r is not None:
+        try:
+            await r.setex(METRICS_CACHE_KEY, METRICS_TTL, json.dumps(metrics))
+        except Exception:
+            pass
+
+    return metrics
 
 
 @router.get("/users", response_model=dict[str, Any])

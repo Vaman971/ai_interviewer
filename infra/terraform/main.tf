@@ -1,3 +1,21 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"   # EKS module v19 is incompatible with AWS provider v6
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 2.10.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = ">= 3.0.0"
+    }
+  }
+  required_version = ">= 1.3.0"
+}
+
 provider "aws" {
   region = var.aws_region
 }
@@ -36,7 +54,7 @@ module "eks" {
   version = "19.16.0"
 
   cluster_name    = "ai-interviewer-eks"
-  cluster_version = "1.28"
+  cluster_version = "1.31"
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -57,25 +75,13 @@ module "eks" {
   }
 }
 
-# ── 3. ECR Repositories (to store Docker images) ─────────────────────
-resource "aws_ecr_repository" "backend" {
-  name                 = "ai-interviewer-backend"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true  # Allows destroy even when images exist
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+# ── 3. ECR Repositories (already created by CI pipeline — read-only) ─
+data "aws_ecr_repository" "backend" {
+  name = "ai-interviewer-backend"
 }
 
-resource "aws_ecr_repository" "frontend" {
-  name                 = "ai-interviewer-frontend"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+data "aws_ecr_repository" "frontend" {
+  name = "ai-interviewer-frontend"
 }
 
 # ── 4. Security Groups ───────────────────────────────────────────────

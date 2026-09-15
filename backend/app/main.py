@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.config import get_settings
 from backend.app.db.database import create_tables
+from backend.app.db.redis import get_redis, close_redis
 from backend.app.api.auth import router as auth_router
 from backend.app.api.interviews import router as interviews_router
 from backend.app.api.media import router as media_router
@@ -40,9 +41,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await create_tables()
         logger.info("Development tables created")
 
+    # Open Redis connection
+    await get_redis()
+
     yield
 
     logger.info("Shutting down %s", settings.app_name)
+    await close_redis()
 
 
 app = FastAPI(
@@ -74,10 +79,18 @@ async def health_check() -> dict:
     """Health-check endpoint for monitoring and load balancing.
 
     Returns:
-        JSON with status, application name, and environment.
+        JSON with status, application name, environment, and Redis connectivity.
     """
+    redis_ok = False
+    try:
+        r = await get_redis()
+        redis_ok = await r.ping()
+    except Exception:
+        pass
+
     return {
         "status": "healthy",
         "app": settings.app_name,
         "env": settings.app_env,
+        "redis": "ok" if redis_ok else "unavailable",
     }

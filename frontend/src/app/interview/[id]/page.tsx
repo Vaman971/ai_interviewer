@@ -65,6 +65,7 @@ export default function InterviewRoomPage() {
   const [confirmExit, setConfirmExit] = useState(false);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [hasStartedInteractive, setHasStartedInteractive] = useState(false);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -119,7 +120,7 @@ export default function InterviewRoomPage() {
         setIsAudioPlaying(true);
         const token = localStorage.getItem("access_token");
         
-        const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/media/tts?text=${encodeURIComponent(text)}`;
+        const url = `/api/media/tts?text=${encodeURIComponent(text)}`;
         const res = await fetch(url, {
           method: "POST",
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -204,7 +205,7 @@ export default function InterviewRoomPage() {
   };
 
   useEffect(() => {
-    fetchInitialQuestion();
+    fetchInitialQuestion(false); // Fetch silently first to prevent autoplay block
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async () => {
@@ -325,8 +326,12 @@ export default function InterviewRoomPage() {
 
       mediaRecorder.start();
       setIsRecording(true);
-    } catch (err) {
-      toast.error("Microphone access denied or unavailable.");
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error(
+        "Microphone blocked! Production microphones require HTTPS. To test locally, use port-forwarding to localhost, or enable 'Insecure origins treated as secure' in Chrome flags.",
+        { duration: 8000 }
+      );
     }
   };
 
@@ -337,7 +342,7 @@ export default function InterviewRoomPage() {
       formData.append("file", audioBlob, "recording.wav");
       
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/media/stt`, {
+      const res = await fetch(`/api/media/stt`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
@@ -388,6 +393,33 @@ export default function InterviewRoomPage() {
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      
+      {/* Autoplay & Interaction Gate Overlay */}
+      {!hasStartedInteractive && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(10,10,15,0.85)", backdropFilter: "blur(15px)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
+        }}>
+          <Brain size={60} color="var(--accent-primary)" style={{ marginBottom: "24px" }} />
+          <h2 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "16px" }}>Ready to Begin?</h2>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "32px", maxWidth: "400px", textAlign: "center" }}>
+            Click below to enter the live interview room. Make sure your speakers are on!
+          </p>
+          <button 
+            onClick={() => {
+               setHasStartedInteractive(true);
+               if (currentQuestion) playQuestionAudio(currentQuestion.question_text);
+            }} 
+            className="btn-gradient" 
+            style={{ padding: "12px 32px", fontSize: "1.2rem" }}
+            disabled={fetchingQuestion}
+          >
+            {fetchingQuestion ? <Loader2 size={24} className="animate-spin" /> : "Enter Interview"}
+          </button>
+        </div>
+      )}
+
       {/* Top Bar */}
       <div style={{
         padding: "12px 24px",

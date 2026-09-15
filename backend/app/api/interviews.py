@@ -13,6 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.database import get_db
+from backend.app.db.redis import get_redis
 from backend.app.models.interview import Interview, InterviewStatus
 from backend.app.models.result import Result
 from backend.app.models.user import User
@@ -33,7 +34,7 @@ router = APIRouter(prefix="/api/interviews", tags=["interviews"])
 
 
 @router.post(
-    "/",
+    "",
     response_model=InterviewResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -97,6 +98,9 @@ async def upload_resume(
     interview.resume_text = text
     await db.flush()
     await db.refresh(interview)
+    
+    # Invalidate Cache
+    await _invalidate_interview_cache(interview.id)
     return interview
 
 
@@ -138,6 +142,8 @@ async def upload_jd(
 
     await db.flush()
     await db.refresh(interview)
+    
+    await _invalidate_interview_cache(interview.id)
     return interview
 
 
@@ -204,6 +210,7 @@ async def start_interview(
 
     await db.flush()
     await db.refresh(interview)
+    await _invalidate_interview_cache(interview.id)
     return interview
 
 
@@ -248,6 +255,7 @@ async def get_next_question(
     if interview.status == InterviewStatus.QUESTIONS_READY.value:
         interview.status = InterviewStatus.IN_PROGRESS.value
         await db.flush()
+        await _invalidate_interview_cache(interview.id)
 
     return {
         "question_index": idx,
@@ -340,6 +348,7 @@ async def submit_answer(
 
     await db.flush()
     await db.refresh(interview)
+    await _invalidate_interview_cache(interview.id)
 
     return {
         "question_index": data.question_index,
@@ -417,6 +426,7 @@ async def complete_interview(
     interview.status = InterviewStatus.SCORED.value
     await db.flush()
     await db.refresh(result)
+    await _invalidate_interview_cache(interview.id)
     return result
 
 
@@ -453,8 +463,43 @@ async def get_results(
         )
     return result
 
+@router.get("/{interview_id}", response_model=InterviewResponse)
+async def get_single_interview(
+    interview_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Get a single interview by ID using Redis Cache."""
+    cache_key = f"interview:{interview_id}"
+    
+    try:
+        r = await get_redis()
+        cached = await r.get(cache_key)
+        if cached:
+            data = json.loads(cached)
+            if data.get("user_id") != current_user.id:
+                raise HTTPException(status.HTTP_403_FORBIDDEN, "Not authorised")
+            return data
+    except HTTPException:
+        raise
+    except Exception:
+        r = None
 
-@router.get("/", response_model=InterviewListResponse)
+    interview = await _get_user_interview(interview_id, current_user.id, db)
+    
+    # Cache mapping
+    if r is not None:
+        try:
+            from backend.app.schemas.interview import InterviewResponse
+            schema = InterviewResponse.model_validate(interview)
+            await r.setex(cache_key, 3600, schema.model_dump_json())
+        except Exception:
+            pass
+
+    return interview
+
+
+@router.get("", response_model=InterviewListResponse)
 async def list_interviews(
     skip: int = 0,
     limit: int = 20,
@@ -507,6 +552,7 @@ async def delete_interview(
     interview = await _get_user_interview(interview_id, current_user.id, db)
     await db.delete(interview)
     await db.commit()
+    await _invalidate_interview_cache(interview_id)
     return None
 
 # ── Private Helpers ─────────────────────────────────────────────
@@ -546,6 +592,14 @@ async def _get_user_interview(
             detail="Not authorised to access this interview",
         )
     return interview
+
+async def _invalidate_interview_cache(interview_id: str) -> None:
+    """Helper to wipe active interview caches when a mutation occurs."""
+    try:
+        r = await get_redis()
+        await r.delete(f"interview:{interview_id}")
+    except Exception:
+        pass
 
 
 def _fallback_scoring() -> dict:

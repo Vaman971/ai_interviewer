@@ -6,13 +6,13 @@ output "aws_account_id" {
 }
 
 output "ecr_backend_url" {
-  description = "ECR URL for the backend image — use this in K8s manifests"
-  value       = aws_ecr_repository.backend.repository_url
+  description = "ECR URL for the backend image -- use this in K8s manifests"
+  value       = data.aws_ecr_repository.backend.repository_url
 }
 
 output "ecr_frontend_url" {
-  description = "ECR URL for the frontend image — use this in K8s manifests"
-  value       = aws_ecr_repository.frontend.repository_url
+  description = "ECR URL for the frontend image -- use this in K8s manifests"
+  value       = data.aws_ecr_repository.frontend.repository_url
 }
 
 output "eks_cluster_name" {

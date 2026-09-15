@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:   # ← enables "Run workflow" button on GitHub Actions UI
 
 jobs:
   test-backend:
@@ -15,12 +16,10 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
-    - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: Install dependencies
-      run: uv pip install --system -e .
+      run: pip install -e ".[dev]"
     - name: Run tests
-      run: pytest backend/tests/ -v
+      run: python -m pytest backend/tests/ -v
 
   build-push-images:
     needs: test-backend
@@ -39,6 +38,15 @@ jobs:
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Create ECR repositories if they don't exist
+      env:
+        AWS_REGION: us-east-1
+      run: |
+        aws ecr describe-repositories --repository-names ai-interviewer-backend --region $AWS_REGION 2>/dev/null || \
+          aws ecr create-repository --repository-name ai-interviewer-backend --region $AWS_REGION
+        aws ecr describe-repositories --repository-names ai-interviewer-frontend --region $AWS_REGION 2>/dev/null || \
+          aws ecr create-repository --repository-name ai-interviewer-frontend --region $AWS_REGION
 
     - name: Build, tag, and push backend image
       env:

@@ -55,3 +55,11 @@ uploads/*
 !uploads/.gitkeep
 backend/uploads/*
 !backend/uploads/.gitkeep
+*.pdf
+
+#terraform
+.terraform
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+.terraform.tfstate.backup
+terraform.tfstate

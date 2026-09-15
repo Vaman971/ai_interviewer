@@ -17,7 +17,11 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from backend.app.db.database import Base, get_db
+from backend.app.config import get_settings
 from backend.app.main import app
+
+# Force tests to use mock agent responses by invalidating the API key
+get_settings().openai_api_key = ""
 
 
 @pytest.fixture(scope="session")
